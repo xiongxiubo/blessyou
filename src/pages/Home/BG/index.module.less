@@ -1,0 +1,72 @@
+.binance {
+  width: 100%;
+  height: 100%;
+  background-color: #fdcf1b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 60px;
+  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  .tabContainer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 20px;
+    z-index: 1;
+    gap: 10px;
+    position: absolute;
+    top: 10px;
+    left: 0;
+    .tab {
+      flex-shrink: 0;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background-color: #000;
+    }
+    .active {
+      background-color: #039cd9a3;
+    }
+  }
+  .col4 {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    text-align: center;
+  }
+  .col5 {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    img {
+      width: 44px;
+      border-radius: 50%;
+      @media (max-width: 768px) {
+        width: 30px;
+      }
+    }
+    span {
+      font-size: 21px;
+      font-weight: 700;
+      color: #000;
+      @media (max-width: 768px) {
+        font-size: 16px;
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "langs": ["en"],
+  "scanPath": "src",
+  "fileType": "vue|ts|js|jsx|tsx",
+  "localePath": "src/locales",
+  "keyCount": 10
+}
