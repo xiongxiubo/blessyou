@@ -20,74 +20,6 @@ const box = new THREE.Box3();
 const axisx = new THREE.Vector3(1, 0, 0);
 
 class TalkingHead {
-  /**
-   * Avatar.
-   * @typedef {Object} Avatar
-   * @property {string} url URL for the GLB file
-   * @property {string} [body] Body form 'M' or 'F'
-   * @property {string} [lipsyncLang] Lip-sync language, e.g. 'fi', 'en'
-   * @property {string} [ttsLang] Text-to-speech language, e.g. "fi-FI"
-   * @property {voice} [ttsVoice] Voice name.
-   * @property {numeric} [ttsRate] Voice rate.
-   * @property {numeric} [ttsPitch] Voice pitch.
-   * @property {numeric} [ttsVolume] Voice volume.
-   * @property {string} [avatarMood] Initial mood.
-   * @property {boolean} [avatarMute] If true, muted.
-   * @property {numeric} [avatarIdleEyeContact] Eye contact while idle [0,1]
-   * @property {numeric} [avatarIdleHeadMove] Eye contact while idle [0,1]
-   * @property {numeric} [avatarSpeakingEyeContact] Eye contact while speaking [0,1]
-   * @property {numeric} [avatarSpeakingHeadMove] Eye contact while speaking [0,1]
-   * @property {Object[]} [modelDynamicBones] Config for Dynamic Bones feature
-   */
-
-  /**
-   * Loading progress.
-   * @callback progressfn
-   * @param {string} url URL of the resource
-   * @param {Object} event Progress event
-   * @param {boolean} event.lengthComputable If false, total is not known
-   * @param {number} event.loaded Number of loaded items
-   * @param {number} event.total Number of total items
-   */
-
-  /**
-   * Callback when new subtitles have been written to the DOM node.
-   * @callback subtitlesfn
-   * @param {Object} node DOM node
-   */
-
-  /**
-   * Callback when the speech queue processes this marker item.
-   * @callback markerfn
-   */
-
-  /**
-   * Audio object.
-   * @typedef {Object} Audio
-   * @property {ArrayBuffer|ArrayBuffer[]} audio Audio buffer or array of buffers
-   * @property {string[]} words Words
-   * @property {number[]} wtimes Starting times of words
-   * @property {number[]} wdurations Durations of words
-   * @property {string[]} [visemes] Oculus lip-sync viseme IDs
-   * @property {number[]} [vtimes] Starting times of visemes
-   * @property {number[]} [vdurations] Durations of visemes
-   * @property {string[]} [markers] Timed callback functions
-   * @property {number[]} [mtimes] Starting times of markers
-   */
-
-  /**
-   * Lip-sync object.
-   * @typedef {Object} Lipsync
-   * @property {string[]} visemes Oculus lip-sync visemes
-   * @property {number[]} times Starting times in relative units
-   * @property {number[]} durations Durations in relative units
-   */
-
-  /**
-   * @constructor
-   * @param {Object} node DOM element of the avatar
-   * @param {Object} [opt=null] Global/default options
-   */
   constructor(node, opt = null) {
     this.nodeAvatar = node;
     this.opt = {
@@ -517,64 +449,64 @@ class TalkingHead {
         },
       },
 
-      wide: {
-        standing: true,
-        props: {
-          "Hips.position": { x: 0, y: 1.017, z: 0.016 },
-          "Hips.rotation": { x: 0.064, y: -0.048, z: 0.059 },
-          "Spine.rotation": { x: -0.123, y: 0, z: -0.018 },
-          "Spine1.rotation": { x: 0.014, y: 0.003, z: -0.006 },
-          "Spine2.rotation": { x: 0.04, y: 0.003, z: -0.007 },
-          "Neck.rotation": { x: 0.101, y: 0.007, z: -0.035 },
-          "Head.rotation": { x: -0.091, y: -0.049, z: 0.105 },
-          "RightShoulder.rotation": { x: 1.831, y: 0.017, z: 1.731 },
-          "RightArm.rotation": { x: -1.673, y: -1.102, z: -3.132 },
-          "RightForeArm.rotation": { x: 0.265, y: 0.23, z: -0.824 },
-          "RightHand.rotation": { x: -0.52, y: 0.345, z: -0.061 },
-          "RightHandThumb1.rotation": { x: 0.291, y: 0.056, z: -0.428 },
-          "RightHandThumb2.rotation": { x: 0.025, y: 0.005, z: 0.166 },
-          "RightHandThumb3.rotation": { x: -0.089, y: 0.009, z: 0.068 },
-          "RightHandIndex1.rotation": { x: 0.392, y: -0.015, z: 0.11 },
-          "RightHandIndex2.rotation": { x: 0.391, y: 0.001, z: 0.004 },
-          "RightHandIndex3.rotation": { x: 0.326, y: 0, z: 0.003 },
-          "RightHandMiddle1.rotation": { x: 0.285, y: 0.068, z: 0.081 },
-          "RightHandMiddle2.rotation": { x: 0.519, y: 0.004, z: 0.011 },
-          "RightHandMiddle3.rotation": { x: 0.252, y: 0, z: 0.001 },
-          "RightHandRing1.rotation": { x: 0.207, y: 0.133, z: 0.146 },
-          "RightHandRing2.rotation": { x: 0.597, y: 0.004, z: 0.004 },
-          "RightHandRing3.rotation": { x: 0.292, y: 0.002, z: 0.012 },
-          "RightHandPinky1.rotation": { x: 0.338, y: 0.182, z: 0.136 },
-          "RightHandPinky2.rotation": { x: 0.533, y: 0.002, z: 0.004 },
-          "RightHandPinky3.rotation": { x: 0.194, y: 0, z: 0.002 },
-          "LeftShoulder.rotation": { x: 1.83, y: -0.063, z: -1.808 },
-          "LeftArm.rotation": { x: -1.907, y: 1.228, z: -2.959 },
-          "LeftForeArm.rotation": { x: -0.159, y: 0.268, z: 0.572 },
-          "LeftHand.rotation": { x: 0.069, y: -0.498, z: -0.025 },
-          "LeftHandThumb1.rotation": { x: 0.738, y: 0.123, z: 0.178 },
-          "LeftHandThumb2.rotation": { x: -0.26, y: 0.028, z: -0.477 },
-          "LeftHandThumb3.rotation": { x: -0.448, y: 0.093, z: -0.661 },
-          "LeftHandIndex1.rotation": { x: 1.064, y: 0.005, z: -0.13 },
-          "LeftHandIndex2.rotation": { x: 1.55, y: -0.143, z: -0.136 },
-          "LeftHandIndex3.rotation": { x: 0.722, y: -0.076, z: -0.127 },
-          "LeftHandMiddle1.rotation": { x: 1.095, y: -0.091, z: 0.006 },
-          "LeftHandMiddle2.rotation": { x: 1.493, y: -0.174, z: -0.151 },
-          "LeftHandMiddle3.rotation": { x: 0.651, y: -0.031, z: -0.087 },
-          "LeftHandRing1.rotation": { x: 1.083, y: -0.224, z: 0.072 },
-          "LeftHandRing2.rotation": { x: 1.145, y: -0.107, z: -0.195 },
-          "LeftHandRing3.rotation": { x: 1.208, y: -0.134, z: -0.158 },
-          "LeftHandPinky1.rotation": { x: 0.964, y: -0.383, z: 0.128 },
-          "LeftHandPinky2.rotation": { x: 1.457, y: -0.146, z: -0.159 },
-          "LeftHandPinky3.rotation": { x: 1.019, y: -0.102, z: -0.141 },
-          "RightUpLeg.rotation": { x: -0.221, y: -0.233, z: 2.87 },
-          "RightLeg.rotation": { x: -0.339, y: -0.043, z: -0.041 },
-          "RightFoot.rotation": { x: 1.081, y: 0.177, z: 0.114 },
-          "RightToeBase.rotation": { x: 0.775, y: 0, z: 0 },
-          "LeftUpLeg.rotation": { x: -0.185, y: 0.184, z: 3.131 },
-          "LeftLeg.rotation": { x: -0.408, y: 0.129, z: 0.02 },
-          "LeftFoot.rotation": { x: 1.167, y: -0.002, z: -0.007 },
-          "LeftToeBase.rotation": { x: 0.723, y: 0, z: 0 },
-        },
-      },
+      // wide: {
+      //   standing: true,
+      //   props: {
+      //     "Hips.position": { x: 0, y: 1.017, z: 0.016 },
+      //     "Hips.rotation": { x: 0.064, y: -0.048, z: 0.059 },
+      //     "Spine.rotation": { x: -0.123, y: 0, z: -0.018 },
+      //     "Spine1.rotation": { x: 0.014, y: 0.003, z: -0.006 },
+      //     "Spine2.rotation": { x: 0.04, y: 0.003, z: -0.007 },
+      //     "Neck.rotation": { x: 0.101, y: 0.007, z: -0.035 },
+      //     "Head.rotation": { x: -0.091, y: -0.049, z: 0.105 },
+      //     "RightShoulder.rotation": { x: 1.831, y: 0.017, z: 1.731 },
+      //     "RightArm.rotation": { x: -1.673, y: -1.102, z: -3.132 },
+      //     "RightForeArm.rotation": { x: 0.265, y: 0.23, z: -0.824 },
+      //     "RightHand.rotation": { x: -0.52, y: 0.345, z: -0.061 },
+      //     "RightHandThumb1.rotation": { x: 0.291, y: 0.056, z: -0.428 },
+      //     "RightHandThumb2.rotation": { x: 0.025, y: 0.005, z: 0.166 },
+      //     "RightHandThumb3.rotation": { x: -0.089, y: 0.009, z: 0.068 },
+      //     "RightHandIndex1.rotation": { x: 0.392, y: -0.015, z: 0.11 },
+      //     "RightHandIndex2.rotation": { x: 0.391, y: 0.001, z: 0.004 },
+      //     "RightHandIndex3.rotation": { x: 0.326, y: 0, z: 0.003 },
+      //     "RightHandMiddle1.rotation": { x: 0.285, y: 0.068, z: 0.081 },
+      //     "RightHandMiddle2.rotation": { x: 0.519, y: 0.004, z: 0.011 },
+      //     "RightHandMiddle3.rotation": { x: 0.252, y: 0, z: 0.001 },
+      //     "RightHandRing1.rotation": { x: 0.207, y: 0.133, z: 0.146 },
+      //     "RightHandRing2.rotation": { x: 0.597, y: 0.004, z: 0.004 },
+      //     "RightHandRing3.rotation": { x: 0.292, y: 0.002, z: 0.012 },
+      //     "RightHandPinky1.rotation": { x: 0.338, y: 0.182, z: 0.136 },
+      //     "RightHandPinky2.rotation": { x: 0.533, y: 0.002, z: 0.004 },
+      //     "RightHandPinky3.rotation": { x: 0.194, y: 0, z: 0.002 },
+      //     "LeftShoulder.rotation": { x: 1.83, y: -0.063, z: -1.808 },
+      //     "LeftArm.rotation": { x: -1.907, y: 1.228, z: -2.959 },
+      //     "LeftForeArm.rotation": { x: -0.159, y: 0.268, z: 0.572 },
+      //     "LeftHand.rotation": { x: 0.069, y: -0.498, z: -0.025 },
+      //     "LeftHandThumb1.rotation": { x: 0.738, y: 0.123, z: 0.178 },
+      //     "LeftHandThumb2.rotation": { x: -0.26, y: 0.028, z: -0.477 },
+      //     "LeftHandThumb3.rotation": { x: -0.448, y: 0.093, z: -0.661 },
+      //     "LeftHandIndex1.rotation": { x: 1.064, y: 0.005, z: -0.13 },
+      //     "LeftHandIndex2.rotation": { x: 1.55, y: -0.143, z: -0.136 },
+      //     "LeftHandIndex3.rotation": { x: 0.722, y: -0.076, z: -0.127 },
+      //     "LeftHandMiddle1.rotation": { x: 1.095, y: -0.091, z: 0.006 },
+      //     "LeftHandMiddle2.rotation": { x: 1.493, y: -0.174, z: -0.151 },
+      //     "LeftHandMiddle3.rotation": { x: 0.651, y: -0.031, z: -0.087 },
+      //     "LeftHandRing1.rotation": { x: 1.083, y: -0.224, z: 0.072 },
+      //     "LeftHandRing2.rotation": { x: 1.145, y: -0.107, z: -0.195 },
+      //     "LeftHandRing3.rotation": { x: 1.208, y: -0.134, z: -0.158 },
+      //     "LeftHandPinky1.rotation": { x: 0.964, y: -0.383, z: 0.128 },
+      //     "LeftHandPinky2.rotation": { x: 1.457, y: -0.146, z: -0.159 },
+      //     "LeftHandPinky3.rotation": { x: 1.019, y: -0.102, z: -0.141 },
+      //     "RightUpLeg.rotation": { x: -0.221, y: -0.233, z: 2.87 },
+      //     "RightLeg.rotation": { x: -0.339, y: -0.043, z: -0.041 },
+      //     "RightFoot.rotation": { x: 1.081, y: 0.177, z: 0.114 },
+      //     "RightToeBase.rotation": { x: 0.775, y: 0, z: 0 },
+      //     "LeftUpLeg.rotation": { x: -0.185, y: 0.184, z: 3.131 },
+      //     "LeftLeg.rotation": { x: -0.408, y: 0.129, z: 0.02 },
+      //     "LeftFoot.rotation": { x: 1.167, y: -0.002, z: -0.007 },
+      //     "LeftToeBase.rotation": { x: 0.723, y: 0, z: 0 },
+      //   },
+      // },
 
       oneknee: {
         kneeling: true,
@@ -1016,30 +948,7 @@ class TalkingHead {
     this.poseTarget = this.poseFactory(this.poseCurrentTemplate);
     this.poseStraight = this.propsToThreeObjects(this.poseTemplates["straight"].props); // Straight pose used as a reference
     this.poseAvatar = null; // Set when avatar has been loaded
-
-    // Avatar height in meters
-    // NOTE: The actual value is calculated based on the eye level on avatar load
     this.avatarHeight = 1.7;
-
-    // Animation templates
-    //
-    // baseline: Describes morph target baseline. Values can be either float or
-    //           an array [start,end,skew] describing a probability distribution.
-    // speech  : Describes voice rate, pitch and volume as deltas to the values
-    //           set as options.
-    // anims   : Animations for breathing, pose, etc. To be used animation
-    //           sequence is selected in the following order:
-    //           1. State (idle, speaking, listening)
-    //           2. Mood (moodX, moodY)
-    //           3. Pose (poseX, poseY)
-    //           5. View (full, upper, head)
-    //           6. Body form ('M','F')
-    //           7. Alt (sequence of objects with propabilities p. If p is not
-    //              specified, the remaining part is shared equivally among
-    //              the rest.)
-    //           8. Current object
-    // object  : delay, delta times dt and values vs.
-    //
 
     this.animTemplateEyes = {
       name: "eyes",
@@ -1101,326 +1010,6 @@ class TalkingHead {
     };
 
     this.animMoods = {
-      l: {
-        baseline: { eyesLookDown: 0.1 },
-        speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
-        anims: [
-          { name: "breathing", delay: 1500, dt: [1200, 500, 1000], vs: { chestInhale: [0.5, 0.5, 0] } },
-          {
-            name: "pose",
-            alt: [
-              { p: 0.5, delay: [5000, 30000], vs: { pose: ["side"] } },
-              { p: 0.3, delay: [5000, 30000], vs: { pose: ["hip"] }, M: { delay: [5000, 30000], vs: { pose: ["wide"] } } },
-              { delay: [5000, 30000], vs: { pose: ["straight"] } },
-            ],
-          },
-          {
-            name: "head",
-            idle: { delay: [0, 1000], dt: [[200, 5000]], vs: { bodyRotateX: [[0, 0]], bodyRotateY: [[-0.3, 0]], bodyRotateZ: [[-0.08, 0.08]] } },
-            speaking: { dt: [[0, 1000, 0]], vs: { bodyRotateX: [[-0.05, 0.15, 1, 2]], bodyRotateY: [[-0.1, 0.1]], bodyRotateZ: [[-0.1, 0.1]] } },
-          },
-          this.animTemplateEyes,
-          this.animTemplateBlink,
-          {
-            name: "mouth",
-            delay: [1000, 5000],
-            dt: [
-              [100, 500],
-              [100, 5000, 2],
-            ],
-            vs: { mouthRollLower: [[0, 0.3, 2]], mouthRollUpper: [[0, 0.3, 2]], mouthStretchLeft: [[0, 0.3]], mouthStretchRight: [[0, 0.3]], mouthPucker: [[0, 0.3]] },
-          },
-          {
-            name: "misc",
-            delay: [100, 5000],
-            dt: [
-              [100, 500],
-              [1000, 5000, 2],
-            ],
-            vs: { eyeSquintLeft: [[0, 0.3, 2]], eyeSquintRight: [[0, 0.3, 2]], browInnerUp: [[0, 0.3, 2]], browOuterUpLeft: [[0, 0.3, 2]], browOuterUpRight: [[0, 0.3, 2]] },
-          },
-        ],
-      },
-      r: {
-        baseline: { eyesLookDown: 0.1 },
-        speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
-        anims: [
-          { name: "breathing", delay: 1500, dt: [1200, 500, 1000], vs: { chestInhale: [0.5, 0.5, 0] } },
-          {
-            name: "pose",
-            alt: [
-              { p: 0.5, delay: [5000, 30000], vs: { pose: ["side"] } },
-              { p: 0.3, delay: [5000, 30000], vs: { pose: ["hip"] }, M: { delay: [5000, 30000], vs: { pose: ["wide"] } } },
-              { delay: [5000, 30000], vs: { pose: ["straight"] } },
-            ],
-          },
-          {
-            name: "head",
-            idle: { delay: [0, 1000], dt: [[200, 5000]], vs: { bodyRotateX: [[0, 0]], bodyRotateY: [[-0.3, 1]], bodyRotateZ: [[-0.08, 0.08]] } },
-            speaking: { dt: [[0, 1000, 0]], vs: { bodyRotateX: [[-0.05, 0.15, 1, 2]], bodyRotateY: [[-0.1, 0.1]], bodyRotateZ: [[-0.1, 0.1]] } },
-          },
-          this.animTemplateEyes,
-          this.animTemplateBlink,
-          {
-            name: "mouth",
-            delay: [1000, 5000],
-            dt: [
-              [100, 500],
-              [100, 5000, 2],
-            ],
-            vs: { mouthRollLower: [[0, 0.3, 2]], mouthRollUpper: [[0, 0.3, 2]], mouthStretchLeft: [[0, 0.3]], mouthStretchRight: [[0, 0.3]], mouthPucker: [[0, 0.3]] },
-          },
-          {
-            name: "misc",
-            delay: [100, 5000],
-            dt: [
-              [100, 500],
-              [1000, 5000, 2],
-            ],
-            vs: { eyeSquintLeft: [[0, 0.3, 2]], eyeSquintRight: [[0, 0.3, 2]], browInnerUp: [[0, 0.3, 2]], browOuterUpLeft: [[0, 0.3, 2]], browOuterUpRight: [[0, 0.3, 2]] },
-          },
-        ],
-      },
-      t: {
-        baseline: { eyesLookDown: 0.1 },
-        speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
-        anims: [
-          { name: "breathing", delay: 1500, dt: [1200, 500, 1000], vs: { chestInhale: [0.5, 0.5, 0] } },
-          {
-            name: "pose",
-            alt: [
-              { p: 0.5, delay: [5000, 30000], vs: { pose: ["side"] } },
-              { p: 0.3, delay: [5000, 30000], vs: { pose: ["hip"] }, M: { delay: [5000, 30000], vs: { pose: ["wide"] } } },
-              { delay: [5000, 30000], vs: { pose: ["straight"] } },
-            ],
-          },
-          {
-            name: "head",
-            idle: { delay: [0, 1000], dt: [[200, 5000]], vs: { bodyRotateX: [[-0.8, 0]], bodyRotateY: [[0, 0]], bodyRotateZ: [[-0.08, 0.08]] } },
-            speaking: { dt: [[0, 1000, 0]], vs: { bodyRotateX: [[-0.05, 0.15, 1, 2]], bodyRotateY: [[-0.1, 0.1]], bodyRotateZ: [[-0.1, 0.1]] } },
-          },
-          this.animTemplateEyes,
-          this.animTemplateBlink,
-          {
-            name: "mouth",
-            delay: [1000, 5000],
-            dt: [
-              [100, 500],
-              [100, 5000, 2],
-            ],
-            vs: { mouthRollLower: [[0, 0.3, 2]], mouthRollUpper: [[0, 0.3, 2]], mouthStretchLeft: [[0, 0.3]], mouthStretchRight: [[0, 0.3]], mouthPucker: [[0, 0.3]] },
-          },
-          {
-            name: "misc",
-            delay: [100, 5000],
-            dt: [
-              [100, 500],
-              [1000, 5000, 2],
-            ],
-            vs: { eyeSquintLeft: [[0, 0.3, 2]], eyeSquintRight: [[0, 0.3, 2]], browInnerUp: [[0, 0.3, 2]], browOuterUpLeft: [[0, 0.3, 2]], browOuterUpRight: [[0, 0.3, 2]] },
-          },
-        ],
-      },
-      b: {
-        baseline: { eyesLookDown: 0.1 },
-        speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
-        anims: [
-          { name: "breathing", delay: 1500, dt: [1200, 500, 1000], vs: { chestInhale: [0.5, 0.5, 0] } },
-          {
-            name: "pose",
-            alt: [
-              { p: 0.5, delay: [5000, 30000], vs: { pose: ["side"] } },
-              { p: 0.3, delay: [5000, 30000], vs: { pose: ["hip"] }, M: { delay: [5000, 30000], vs: { pose: ["wide"] } } },
-              { delay: [5000, 30000], vs: { pose: ["straight"] } },
-            ],
-          },
-          {
-            name: "head",
-            idle: { delay: [0, 1000], dt: [[200, 5000]], vs: { bodyRotateX: [[-0.04, 0.5]], bodyRotateY: [[0, 0]], bodyRotateZ: [[-0.08, 0.08]] } },
-            speaking: { dt: [[0, 1000, 0]], vs: { bodyRotateX: [[-0.05, 0.15, 1, 2]], bodyRotateY: [[-0.1, 0.1]], bodyRotateZ: [[-0.1, 0.1]] } },
-          },
-          this.animTemplateEyes,
-          this.animTemplateBlink,
-          {
-            name: "mouth",
-            delay: [1000, 5000],
-            dt: [
-              [100, 500],
-              [100, 5000, 2],
-            ],
-            vs: { mouthRollLower: [[0, 0.3, 2]], mouthRollUpper: [[0, 0.3, 2]], mouthStretchLeft: [[0, 0.3]], mouthStretchRight: [[0, 0.3]], mouthPucker: [[0, 0.3]] },
-          },
-          {
-            name: "misc",
-            delay: [100, 5000],
-            dt: [
-              [100, 500],
-              [1000, 5000, 2],
-            ],
-            vs: { eyeSquintLeft: [[0, 0.3, 2]], eyeSquintRight: [[0, 0.3, 2]], browInnerUp: [[0, 0.3, 2]], browOuterUpLeft: [[0, 0.3, 2]], browOuterUpRight: [[0, 0.3, 2]] },
-          },
-        ],
-      },
-      lb: {
-        baseline: { eyesLookDown: 0.1 },
-        speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
-        anims: [
-          { name: "breathing", delay: 1500, dt: [1200, 500, 1000], vs: { chestInhale: [0.5, 0.5, 0] } },
-          {
-            name: "pose",
-            alt: [
-              { p: 0.5, delay: [5000, 30000], vs: { pose: ["side"] } },
-              { p: 0.3, delay: [5000, 30000], vs: { pose: ["hip"] }, M: { delay: [5000, 30000], vs: { pose: ["wide"] } } },
-              { delay: [5000, 30000], vs: { pose: ["straight"] } },
-            ],
-          },
-          {
-            name: "head",
-            idle: { delay: [0, 1000], dt: [[200, 5000]], vs: { bodyRotateX: [[0, 0.5]], bodyRotateY: [[-0.5, 0]], bodyRotateZ: [[-0.08, 0.08]] } },
-            speaking: { dt: [[0, 1000, 0]], vs: { bodyRotateX: [[-0.05, 0.15, 1, 2]], bodyRotateY: [[-0.1, 0.1]], bodyRotateZ: [[-0.1, 0.1]] } },
-          },
-          this.animTemplateEyes,
-          this.animTemplateBlink,
-          {
-            name: "mouth",
-            delay: [1000, 5000],
-            dt: [
-              [100, 500],
-              [100, 5000, 2],
-            ],
-            vs: { mouthRollLower: [[0, 0.3, 2]], mouthRollUpper: [[0, 0.3, 2]], mouthStretchLeft: [[0, 0.3]], mouthStretchRight: [[0, 0.3]], mouthPucker: [[0, 0.3]] },
-          },
-          {
-            name: "misc",
-            delay: [100, 5000],
-            dt: [
-              [100, 500],
-              [1000, 5000, 2],
-            ],
-            vs: { eyeSquintLeft: [[0, 0.3, 2]], eyeSquintRight: [[0, 0.3, 2]], browInnerUp: [[0, 0.3, 2]], browOuterUpLeft: [[0, 0.3, 2]], browOuterUpRight: [[0, 0.3, 2]] },
-          },
-        ],
-      },
-      rb: {
-        baseline: { eyesLookDown: 0.1 },
-        speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
-        anims: [
-          { name: "breathing", delay: 1500, dt: [1200, 500, 1000], vs: { chestInhale: [0.5, 0.5, 0] } },
-          {
-            name: "pose",
-            alt: [
-              { p: 0.5, delay: [5000, 30000], vs: { pose: ["side"] } },
-              { p: 0.3, delay: [5000, 30000], vs: { pose: ["hip"] }, M: { delay: [5000, 30000], vs: { pose: ["wide"] } } },
-              { delay: [5000, 30000], vs: { pose: ["straight"] } },
-            ],
-          },
-          {
-            name: "head",
-            idle: { delay: [0, 1000], dt: [[200, 5000]], vs: { bodyRotateX: [[-0, 0.5]], bodyRotateY: [[0, 0.5]], bodyRotateZ: [[-0.08, 0.08]] } },
-            speaking: { dt: [[0, 1000, 0]], vs: { bodyRotateX: [[-0.05, 0.15, 1, 2]], bodyRotateY: [[-0.1, 0.1]], bodyRotateZ: [[-0.1, 0.1]] } },
-          },
-          this.animTemplateEyes,
-          this.animTemplateBlink,
-          {
-            name: "mouth",
-            delay: [1000, 5000],
-            dt: [
-              [100, 500],
-              [100, 5000, 2],
-            ],
-            vs: { mouthRollLower: [[0, 0.3, 2]], mouthRollUpper: [[0, 0.3, 2]], mouthStretchLeft: [[0, 0.3]], mouthStretchRight: [[0, 0.3]], mouthPucker: [[0, 0.3]] },
-          },
-          {
-            name: "misc",
-            delay: [100, 5000],
-            dt: [
-              [100, 500],
-              [1000, 5000, 2],
-            ],
-            vs: { eyeSquintLeft: [[0, 0.3, 2]], eyeSquintRight: [[0, 0.3, 2]], browInnerUp: [[0, 0.3, 2]], browOuterUpLeft: [[0, 0.3, 2]], browOuterUpRight: [[0, 0.3, 2]] },
-          },
-        ],
-      },
-      lt: {
-        baseline: { eyesLookDown: 0.1 },
-        speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
-        anims: [
-          { name: "breathing", delay: 1500, dt: [1200, 500, 1000], vs: { chestInhale: [0.5, 0.5, 0] } },
-          {
-            name: "pose",
-            alt: [
-              { p: 0.5, delay: [5000, 30000], vs: { pose: ["side"] } },
-              { p: 0.3, delay: [5000, 30000], vs: { pose: ["hip"] }, M: { delay: [5000, 30000], vs: { pose: ["wide"] } } },
-              { delay: [5000, 30000], vs: { pose: ["straight"] } },
-            ],
-          },
-          {
-            name: "head",
-            idle: { delay: [0, 1000], dt: [[200, 5000]], vs: { bodyRotateX: [[-0.5, 0]], bodyRotateY: [[-0.5, 0]], bodyRotateZ: [[-0.08, 0.08]] } },
-            speaking: { dt: [[0, 1000, 0]], vs: { bodyRotateX: [[-0.05, 0.15, 1, 2]], bodyRotateY: [[-0.1, 0.1]], bodyRotateZ: [[-0.1, 0.1]] } },
-          },
-          this.animTemplateEyes,
-          this.animTemplateBlink,
-          {
-            name: "mouth",
-            delay: [1000, 5000],
-            dt: [
-              [100, 500],
-              [100, 5000, 2],
-            ],
-            vs: { mouthRollLower: [[0, 0.3, 2]], mouthRollUpper: [[0, 0.3, 2]], mouthStretchLeft: [[0, 0.3]], mouthStretchRight: [[0, 0.3]], mouthPucker: [[0, 0.3]] },
-          },
-          {
-            name: "misc",
-            delay: [100, 5000],
-            dt: [
-              [100, 500],
-              [1000, 5000, 2],
-            ],
-            vs: { eyeSquintLeft: [[0, 0.3, 2]], eyeSquintRight: [[0, 0.3, 2]], browInnerUp: [[0, 0.3, 2]], browOuterUpLeft: [[0, 0.3, 2]], browOuterUpRight: [[0, 0.3, 2]] },
-          },
-        ],
-      },
-      rt: {
-        baseline: { eyesLookDown: 0.1 },
-        speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
-        anims: [
-          { name: "breathing", delay: 1500, dt: [1200, 500, 1000], vs: { chestInhale: [0.5, 0.5, 0] } },
-          {
-            name: "pose",
-            alt: [
-              { p: 0.5, delay: [5000, 30000], vs: { pose: ["side"] } },
-              { p: 0.3, delay: [5000, 30000], vs: { pose: ["hip"] }, M: { delay: [5000, 30000], vs: { pose: ["wide"] } } },
-              { delay: [5000, 30000], vs: { pose: ["straight"] } },
-            ],
-          },
-          {
-            name: "head",
-            idle: { delay: [0, 1000], dt: [[200, 5000]], vs: { bodyRotateX: [[-0.5, 0]], bodyRotateY: [[0, 0.5]], bodyRotateZ: [[-0.08, 0.08]] } },
-            speaking: { dt: [[0, 1000, 0]], vs: { bodyRotateX: [[-0.05, 0.15, 1, 2]], bodyRotateY: [[-0.1, 0.1]], bodyRotateZ: [[-0.1, 0.1]] } },
-          },
-          this.animTemplateEyes,
-          this.animTemplateBlink,
-          {
-            name: "mouth",
-            delay: [1000, 5000],
-            dt: [
-              [100, 500],
-              [100, 5000, 2],
-            ],
-            vs: { mouthRollLower: [[0, 0.3, 2]], mouthRollUpper: [[0, 0.3, 2]], mouthStretchLeft: [[0, 0.3]], mouthStretchRight: [[0, 0.3]], mouthPucker: [[0, 0.3]] },
-          },
-          {
-            name: "misc",
-            delay: [100, 5000],
-            dt: [
-              [100, 500],
-              [1000, 5000, 2],
-            ],
-            vs: { eyeSquintLeft: [[0, 0.3, 2]], eyeSquintRight: [[0, 0.3, 2]], browInnerUp: [[0, 0.3, 2]], browOuterUpLeft: [[0, 0.3, 2]], browOuterUpRight: [[0, 0.3, 2]] },
-          },
-        ],
-      },
       neutral: {
         baseline: { eyesLookDown: 0.1 },
         speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
@@ -2738,29 +2327,56 @@ class TalkingHead {
       dracoLoader.setDecoderPath(this.dracoDecoderPath);
       loader.setDRACOLoader(dracoLoader);
     }
-    // const textureLoader = new THREE.TextureLoader();
-
-    // const logoTexture = textureLoader.load("image/logo.png");
-    // logoTexture.flipY = false; // 对 GLTF 模型很重要
-    // logoTexture.encoding = THREE.sRGBEncoding;
     let gltf = await loader.loadAsync(avatar.url, onprogress);
     const model = gltf.scene;
-    model.traverse(child => {
-      if (child.isMesh) {
-        child.userData = { partInfo: `这是部位: ${child.name}` };
-        // if (child.name === "00408DC64039D5CBPRIM_1017") {
-        //   // 创建一个叠加 logo 的贴图（使用多层纹理）
-        //   const doorMaterial = child.material.clone();
-        //   // === 方法1：直接修改材质贴图（简单） ===
-        //   doorMaterial.map = logoTexture;
-        //   doorMaterial.needsUpdate = true;
-        //   child.material = doorMaterial;
-        // }
-      }
-    });
 
     this.scene.add(model);
+    // 创建 logo 平面
+    const textureLoader = new THREE.TextureLoader();
+    const logoTexture = textureLoader.load("/image/bnb.png");
+    const logo = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.06, 0.06), // 尺寸可调
+      new THREE.MeshBasicMaterial({
+        map: logoTexture,
+        transparent: true,
+        side: THREE.DoubleSide,
+      }),
+    );
 
+    // 获取胸部骨骼
+    const chestBone = model.getObjectByName("Spine2");
+    if (!chestBone) {
+      console.error("未找到 Spine2 骨骼");
+      return;
+    }
+
+    // 添加到骨骼下
+    chestBone.add(logo);
+
+    // 调整 logo 的相对位置（试着微调到左胸）
+    logo.position.set(0.11, 0.1, 0.1); // X向左/右，Y向上/下，Z向前/后
+    logo.rotation.y = Math.PI * 0.12; // 稍微朝外倾斜一点
+    logo.rotation.x = -Math.PI * 0.12; // 稍微朝外倾斜一点
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    // === 鼠标事件监听 ===
+    window.addEventListener("click", event => {
+      // 将鼠标坐标归一化到 [-1, 1]
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      // 用摄像机和鼠标位置更新射线
+      raycaster.setFromCamera(mouse, this.camera);
+
+      // 检测点击的对象
+      if (!logo) return;
+      const intersects = raycaster.intersectObject(logo, true);
+
+      if (intersects.length > 0) {
+        console.log("🎯 点击到 logo！");
+      }
+    });
     // const HeadBone = model.getObjectByName("Head");
     // // === 🟢 创建“恭喜发财”标签 ===
 
