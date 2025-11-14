@@ -1,11 +1,19 @@
 {
   "9f0cde8e3b": "Wallet not connected",
   "71fa3bd0e5": "Login successful",
+  "c97e0f311a": "Character switching",
+  "f53b5122c3": "Role list",
   "499f058a0b": "Log out successfully",
   "44efd179aa": "Log out",
   "a11cc7a65b": "Please enter content",
-  "e2c11f74d1": "Please enter name",
+  "56b572143b": "Please upload pictures",
+  "269a45ec22": "Please enter the blessing text",
+  "1fd92eb412": "Generate using template",
+  "30b42f7c29": "Replay",
   "1ae3a9842b": "Generating",
   "bf2fdfd2d1": "One-click generation",
+  "e2c11f74d1": "Please enter name",
+  "4dfe703640": "generate",
+  "625fb26b4b": "Cancel",
   "f013ea9dcb": "loading"
 }

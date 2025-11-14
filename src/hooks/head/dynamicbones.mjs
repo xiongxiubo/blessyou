@@ -7,21 +7,16 @@ const v = new THREE.Vector3();
 const v2 = new THREE.Vector3();
 const w = new THREE.Vector3();
 const w2 = new THREE.Vector3();
-const p = new THREE.Plane();
-const r = new THREE.Ray();
-const e = new THREE.Euler();
 const q = new THREE.Quaternion();
 const q2 = new THREE.Quaternion();
 const m = new THREE.Matrix4();
 const minv = new THREE.Matrix4();
 
 // Axis
-const origin = new THREE.Vector3();
 const forward = new THREE.Vector3(0, 0, 1);
 const axisx = new THREE.Vector3(1, 0, 0);
 const axisy = new THREE.Vector3(0, 1, 0);
 const axisz = new THREE.Vector3(0, 0, 1);
-
 class DynamicBones {
   constructor(opt = null) {
     this.opt = Object.assign(

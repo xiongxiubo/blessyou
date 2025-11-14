@@ -1,26 +1,39 @@
-// import ScreenRecorder from "@/components/ScreenRecorder";
-import { $at } from "i18n-auto-extractor";
 import style from "./index.module.less";
-import { App, Button, Input, Space, Tooltip } from "antd";
-import { PlayCircleOutlined } from "@ant-design/icons";
+import { App } from "antd";
+import { $at } from "i18n-auto-extractor";
 
 const Loading = lazy(() => import("./Loading"));
 const BG = lazy(() => import("./BG"));
+const SwitchRoles = lazy(() => import("@/components/SwitchRoles"));
+const InputComponent = lazy(() => import("./Input"));
 
 export default function Home() {
   const { message } = App.useApp();
   const avatarRef = useRef<HTMLDivElement>(null);
-  const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { loading, sendText, playAgain, AudioData } = useAudio(avatarRef, setIsLoading);
 
-  const Enter = async () => {
+  const { loading, connectWebSocket, playAgain, AudioData } = useAudio(avatarRef, setIsLoading);
+  const Enter = async (text: string) => {
     if (!text) return message.warning($at("请输入内容"));
     setIsLoading(true);
-    await sendText(text);
+    connectWebSocket(text);
   };
+
+  // const props: UploadProps = {
+  //   name: "file",
+  //   showUploadList: false,
+  //   beforeUpload(file) {
+  //     const isImage = file.type.startsWith("image/");
+  //     if (!isImage) {
+  //       message.warning($at("请上传图片"));
+  //     }
+  //     setLogo(file);
+  //     return false;
+  //   },
+  // };
   return (
     <>
+      <SwitchRoles />
       {loading && <Loading />}
       <div className={style.container}>
         <BG />
@@ -28,38 +41,12 @@ export default function Home() {
           className={style.avatar}
           ref={avatarRef}
         />
-        <div className={style.tail}>
-          {AudioData && (
-            <Space>
-              {/* <Tooltip title="下载视频">
-                <DownloadOutlined
-                  className={style.icon}
-                  onClick={downloadVideo}
-                />
-              </Tooltip> */}
-              <Tooltip title="重新播放">
-                <PlayCircleOutlined
-                  disabled={isLoading}
-                  className={style.icon}
-                  onClick={playAgain}
-                />
-              </Tooltip>
-            </Space>
-          )}
-          <Input
-            value={text}
-            className={style.input}
-            placeholder={$at("请输入名字")}
-            onChange={e => setText(e.target.value)}
-            maxLength={20}
-          />
-          <Button
-            loading={isLoading}
-            className={style.button}
-            onClick={Enter}>
-            {isLoading ? $at("生成中") : $at("一键生成")}
-          </Button>
-        </div>
+        <InputComponent
+          isLoading={isLoading}
+          playAgain={playAgain}
+          AudioData={AudioData}
+          Enter={e => Enter(e)}
+        />
       </div>
     </>
   );

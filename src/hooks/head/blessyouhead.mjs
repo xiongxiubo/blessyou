@@ -3,15 +3,12 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
-import { CSS2DRenderer, CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
+import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import Stats from "three/addons/libs/stats.module.js";
-import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-
 import { DynamicBones } from "./dynamicbones.mjs";
 const workletUrl = new URL("./playback-worklet.js", import.meta.url);
 
-// Temporary objects for animation loop
 const q = new THREE.Quaternion();
 const e = new THREE.Euler();
 const v = new THREE.Vector3();
@@ -56,7 +53,7 @@ class TalkingHead {
       lightAmbientColor: 0xeeeeee,
       lightAmbientIntensity: 3,
       lightDirectColor: 0xffffff,
-      lightDirectIntensity: 5,
+      lightDirectIntensity: 4,
       lightDirectPhi: 1,
       lightDirectTheta: 2,
       lightSpotIntensity: 0,
@@ -79,6 +76,7 @@ class TalkingHead {
       listeningActiveDurationMax: 240000,
       statsNode: null,
       statsStyle: null,
+      enableStrongLight: false,
     };
     Object.assign(this.opt, opt || {});
     // Statistics
@@ -93,600 +91,7 @@ class TalkingHead {
     // Pose templates
     // NOTE: The body weight on each pose should be on left foot
     // for most natural result.
-    this.poseTemplates = {
-      side: {
-        standing: true,
-        props: {
-          "Hips.position": { x: 0, y: 1, z: 0 },
-          "Hips.rotation": { x: -0.003, y: -0.017, z: 0.1 },
-          "Spine.rotation": { x: -0.103, y: -0.002, z: -0.063 },
-          "Spine1.rotation": { x: 0.042, y: -0.02, z: -0.069 },
-          "Spine2.rotation": { x: 0.131, y: -0.012, z: -0.065 },
-          "Neck.rotation": { x: 0.027, y: 0.006, z: 0 },
-          "Head.rotation": { x: 0.077, y: -0.065, z: 0 },
-          "LeftShoulder.rotation": { x: 1.599, y: 0.084, z: -1.77 },
-          "LeftArm.rotation": { x: 1.364, y: 0.052, z: -0.044 },
-          "LeftForeArm.rotation": { x: 0.002, y: -0.007, z: 0.331 },
-          "LeftHand.rotation": { x: 0.104, y: -0.067, z: -0.174 },
-          "LeftHandThumb1.rotation": { x: 0.231, y: 0.258, z: 0.355 },
-          "LeftHandThumb2.rotation": { x: -0.106, y: -0.339, z: -0.454 },
-          "LeftHandThumb3.rotation": { x: -0.02, y: -0.142, z: -0.004 },
-          "LeftHandIndex1.rotation": { x: 0.148, y: 0.032, z: -0.069 },
-          "LeftHandIndex2.rotation": { x: 0.326, y: -0.049, z: -0.029 },
-          "LeftHandIndex3.rotation": { x: 0.247, y: -0.053, z: -0.073 },
-          "LeftHandMiddle1.rotation": { x: 0.238, y: -0.057, z: -0.089 },
-          "LeftHandMiddle2.rotation": { x: 0.469, y: -0.036, z: -0.081 },
-          "LeftHandMiddle3.rotation": { x: 0.206, y: -0.015, z: -0.017 },
-          "LeftHandRing1.rotation": { x: 0.187, y: -0.118, z: -0.157 },
-          "LeftHandRing2.rotation": { x: 0.579, y: 0.02, z: -0.097 },
-          "LeftHandRing3.rotation": { x: 0.272, y: 0.021, z: -0.063 },
-          "LeftHandPinky1.rotation": { x: 0.405, y: -0.182, z: -0.138 },
-          "LeftHandPinky2.rotation": { x: 0.613, y: 0.128, z: -0.144 },
-          "LeftHandPinky3.rotation": { x: 0.268, y: 0.094, z: -0.081 },
-          "RightShoulder.rotation": { x: 1.541, y: 0.192, z: 1.775 },
-          "RightArm.rotation": { x: 1.273, y: -0.352, z: -0.067 },
-          "RightForeArm.rotation": { x: -0.011, y: -0.031, z: -0.357 },
-          "RightHand.rotation": { x: -0.008, y: 0.312, z: -0.028 },
-          "RightHandThumb1.rotation": { x: 0.23, y: -0.258, z: -0.355 },
-          "RightHandThumb2.rotation": { x: -0.107, y: 0.339, z: 0.454 },
-          "RightHandThumb3.rotation": { x: -0.02, y: 0.142, z: 0.004 },
-          "RightHandIndex1.rotation": { x: 0.148, y: -0.031, z: 0.069 },
-          "RightHandIndex2.rotation": { x: 0.326, y: 0.049, z: 0.029 },
-          "RightHandIndex3.rotation": { x: 0.247, y: 0.053, z: 0.073 },
-          "RightHandMiddle1.rotation": { x: 0.237, y: 0.057, z: 0.089 },
-          "RightHandMiddle2.rotation": { x: 0.469, y: 0.036, z: 0.081 },
-          "RightHandMiddle3.rotation": { x: 0.206, y: 0.015, z: 0.017 },
-          "RightHandRing1.rotation": { x: 0.204, y: 0.086, z: 0.135 },
-          "RightHandRing2.rotation": { x: 0.579, y: -0.02, z: 0.098 },
-          "RightHandRing3.rotation": { x: 0.272, y: -0.021, z: 0.063 },
-          "RightHandPinky1.rotation": { x: 0.404, y: 0.182, z: 0.137 },
-          "RightHandPinky2.rotation": { x: 0.613, y: -0.128, z: 0.144 },
-          "RightHandPinky3.rotation": { x: 0.268, y: -0.094, z: 0.081 },
-          "LeftUpLeg.rotation": { x: 0.096, y: 0.209, z: 2.983 },
-          "LeftLeg.rotation": { x: -0.053, y: 0.042, z: -0.017 },
-          "LeftFoot.rotation": { x: 1.091, y: 0.15, z: 0.026 },
-          "LeftToeBase.rotation": { x: 0.469, y: -0.07, z: -0.015 },
-          "RightUpLeg.rotation": { x: -0.307, y: -0.219, z: 2.912 },
-          "RightLeg.rotation": { x: -0.359, y: 0.164, z: 0.015 },
-          "RightFoot.rotation": { x: 1.035, y: 0.11, z: 0.005 },
-          "RightToeBase.rotation": { x: 0.467, y: 0.07, z: 0.015 },
-        },
-      },
-
-      hip: {
-        standing: true,
-        props: {
-          "Hips.position": { x: 0, y: 1, z: 0 },
-          "Hips.rotation": { x: -0.036, y: 0.09, z: 0.135 },
-          "Spine.rotation": { x: 0.076, y: -0.035, z: 0.01 },
-          "Spine1.rotation": { x: -0.096, y: 0.013, z: -0.094 },
-          "Spine2.rotation": { x: -0.014, y: 0.002, z: -0.097 },
-          "Neck.rotation": { x: 0.034, y: -0.051, z: -0.075 },
-          "Head.rotation": { x: 0.298, y: -0.1, z: 0.154 },
-          "LeftShoulder.rotation": { x: 1.694, y: 0.011, z: -1.68 },
-          "LeftArm.rotation": { x: 1.343, y: 0.177, z: -0.153 },
-          "LeftForeArm.rotation": { x: -0.049, y: 0.134, z: 0.351 },
-          "LeftHand.rotation": { x: 0.057, y: -0.189, z: -0.026 },
-          "LeftHandThumb1.rotation": { x: 0.368, y: -0.066, z: 0.438 },
-          "LeftHandThumb2.rotation": { x: -0.156, y: 0.029, z: -0.369 },
-          "LeftHandThumb3.rotation": { x: 0.034, y: -0.009, z: 0.016 },
-          "LeftHandIndex1.rotation": { x: 0.157, y: -0.002, z: -0.171 },
-          "LeftHandIndex2.rotation": { x: 0.099, y: 0, z: 0 },
-          "LeftHandIndex3.rotation": { x: 0.1, y: 0, z: 0 },
-          "LeftHandMiddle1.rotation": { x: 0.222, y: -0.019, z: -0.16 },
-          "LeftHandMiddle2.rotation": { x: 0.142, y: 0, z: 0 },
-          "LeftHandMiddle3.rotation": { x: 0.141, y: 0, z: 0 },
-          "LeftHandRing1.rotation": { x: 0.333, y: -0.039, z: -0.174 },
-          "LeftHandRing2.rotation": { x: 0.214, y: 0, z: 0 },
-          "LeftHandRing3.rotation": { x: 0.213, y: 0, z: 0 },
-          "LeftHandPinky1.rotation": { x: 0.483, y: -0.069, z: -0.189 },
-          "LeftHandPinky2.rotation": { x: 0.312, y: 0, z: 0 },
-          "LeftHandPinky3.rotation": { x: 0.309, y: 0, z: 0 },
-          "RightShoulder.rotation": { x: 1.597, y: 0.012, z: 1.816 },
-          "RightArm.rotation": { x: 0.618, y: -1.274, z: -0.266 },
-          "RightForeArm.rotation": { x: -0.395, y: -0.097, z: -1.342 },
-          "RightHand.rotation": { x: -0.816, y: -0.057, z: -0.976 },
-          "RightHandThumb1.rotation": { x: 0.42, y: 0.23, z: -1.172 },
-          "RightHandThumb2.rotation": { x: -0.027, y: 0.361, z: 0.122 },
-          "RightHandThumb3.rotation": { x: 0.076, y: 0.125, z: -0.371 },
-          "RightHandIndex1.rotation": { x: -0.158, y: -0.045, z: 0.033 },
-          "RightHandIndex2.rotation": { x: 0.391, y: 0.051, z: 0.025 },
-          "RightHandIndex3.rotation": { x: 0.317, y: 0.058, z: 0.07 },
-          "RightHandMiddle1.rotation": { x: 0.486, y: 0.066, z: 0.014 },
-          "RightHandMiddle2.rotation": { x: 0.718, y: 0.055, z: 0.07 },
-          "RightHandMiddle3.rotation": { x: 0.453, y: 0.019, z: 0.013 },
-          "RightHandRing1.rotation": { x: 0.591, y: 0.241, z: 0.11 },
-          "RightHandRing2.rotation": { x: 1.014, y: 0.023, z: 0.097 },
-          "RightHandRing3.rotation": { x: 0.708, y: 0.008, z: 0.066 },
-          "RightHandPinky1.rotation": { x: 1.02, y: 0.305, z: 0.051 },
-          "RightHandPinky2.rotation": { x: 1.187, y: -0.028, z: 0.191 },
-          "RightHandPinky3.rotation": { x: 0.872, y: -0.031, z: 0.121 },
-          "LeftUpLeg.rotation": { x: -0.095, y: -0.058, z: -3.338 },
-          "LeftLeg.rotation": { x: -0.366, y: 0.287, z: -0.021 },
-          "LeftFoot.rotation": { x: 1.131, y: 0.21, z: 0.176 },
-          "LeftToeBase.rotation": { x: 0.739, y: -0.068, z: -0.001 },
-          "RightUpLeg.rotation": { x: -0.502, y: 0.362, z: 3.153 },
-          "RightLeg.rotation": { x: -1.002, y: 0.109, z: 0.008 },
-          "RightFoot.rotation": { x: 0.626, y: -0.097, z: -0.194 },
-          "RightToeBase.rotation": { x: 1.33, y: 0.288, z: -0.078 },
-        },
-      },
-
-      turn: {
-        standing: true,
-        props: {
-          "Hips.position": { x: 0, y: 1, z: 0 },
-          "Hips.rotation": { x: -0.07, y: -0.604, z: -0.004 },
-          "Spine.rotation": { x: -0.007, y: 0.003, z: 0.071 },
-          "Spine1.rotation": { x: -0.053, y: 0.024, z: -0.06 },
-          "Spine2.rotation": { x: 0.074, y: 0.013, z: -0.068 },
-          "Neck.rotation": { x: 0.03, y: 0.186, z: -0.077 },
-          "Head.rotation": { x: 0.045, y: 0.243, z: -0.086 },
-          "LeftShoulder.rotation": { x: 1.717, y: -0.085, z: -1.761 },
-          "LeftArm.rotation": { x: 1.314, y: 0.07, z: -0.057 },
-          "LeftForeArm.rotation": { x: -0.151, y: 0.714, z: 0.302 },
-          "LeftHand.rotation": { x: -0.069, y: 0.003, z: -0.118 },
-          "LeftHandThumb1.rotation": { x: 0.23, y: 0.258, z: 0.354 },
-          "LeftHandThumb2.rotation": { x: -0.107, y: -0.338, z: -0.455 },
-          "LeftHandThumb3.rotation": { x: -0.015, y: -0.142, z: 0.002 },
-          "LeftHandIndex1.rotation": { x: 0.145, y: 0.032, z: -0.069 },
-          "LeftHandIndex2.rotation": { x: 0.323, y: -0.049, z: -0.028 },
-          "LeftHandIndex3.rotation": { x: 0.249, y: -0.053, z: -0.074 },
-          "LeftHandMiddle1.rotation": { x: 0.235, y: -0.057, z: -0.088 },
-          "LeftHandMiddle2.rotation": { x: 0.468, y: -0.036, z: -0.081 },
-          "LeftHandMiddle3.rotation": { x: 0.203, y: -0.015, z: -0.017 },
-          "LeftHandRing1.rotation": { x: 0.185, y: -0.118, z: -0.157 },
-          "LeftHandRing2.rotation": { x: 0.578, y: 0.02, z: -0.097 },
-          "LeftHandRing3.rotation": { x: 0.27, y: 0.021, z: -0.063 },
-          "LeftHandPinky1.rotation": { x: 0.404, y: -0.182, z: -0.138 },
-          "LeftHandPinky2.rotation": { x: 0.612, y: 0.128, z: -0.144 },
-          "LeftHandPinky3.rotation": { x: 0.267, y: 0.094, z: -0.081 },
-          "RightShoulder.rotation": { x: 1.605, y: 0.17, z: 1.625 },
-          "RightArm.rotation": { x: 1.574, y: -0.655, z: 0.388 },
-          "RightForeArm.rotation": { x: -0.36, y: -0.849, z: -0.465 },
-          "RightHand.rotation": { x: 0.114, y: 0.416, z: -0.069 },
-          "RightHandThumb1.rotation": { x: 0.486, y: 0.009, z: -0.492 },
-          "RightHandThumb2.rotation": { x: -0.073, y: -0.01, z: 0.284 },
-          "RightHandThumb3.rotation": { x: -0.054, y: -0.006, z: 0.209 },
-          "RightHandIndex1.rotation": { x: 0.245, y: -0.014, z: 0.052 },
-          "RightHandIndex2.rotation": { x: 0.155, y: 0, z: 0 },
-          "RightHandIndex3.rotation": { x: 0.153, y: 0, z: 0 },
-          "RightHandMiddle1.rotation": { x: 0.238, y: 0.004, z: 0.028 },
-          "RightHandMiddle2.rotation": { x: 0.15, y: 0, z: 0 },
-          "RightHandMiddle3.rotation": { x: 0.149, y: 0, z: 0 },
-          "RightHandRing1.rotation": { x: 0.267, y: 0.012, z: 0.007 },
-          "RightHandRing2.rotation": { x: 0.169, y: 0, z: 0 },
-          "RightHandRing3.rotation": { x: 0.167, y: 0, z: 0 },
-          "RightHandPinky1.rotation": { x: 0.304, y: 0.018, z: -0.021 },
-          "RightHandPinky2.rotation": { x: 0.192, y: 0, z: 0 },
-          "RightHandPinky3.rotation": { x: 0.19, y: 0, z: 0 },
-          "LeftUpLeg.rotation": { x: -0.001, y: -0.058, z: -3.238 },
-          "LeftLeg.rotation": { x: -0.29, y: 0.058, z: -0.021 },
-          "LeftFoot.rotation": { x: 1.288, y: 0.168, z: 0.183 },
-          "LeftToeBase.rotation": { x: 0.363, y: -0.09, z: -0.01 },
-          "RightUpLeg.rotation": { x: -0.1, y: 0.36, z: 3.062 },
-          "RightLeg.rotation": { x: -0.67, y: -0.304, z: 0.043 },
-          "RightFoot.rotation": { x: 1.195, y: -0.159, z: -0.294 },
-          "RightToeBase.rotation": { x: 0.737, y: 0.164, z: -0.002 },
-        },
-      },
-
-      bend: {
-        bend: true,
-        standing: true,
-        props: {
-          "Hips.position": { x: -0.007, y: 0.943, z: -0.001 },
-          "Hips.rotation": { x: 1.488, y: -0.633, z: 1.435 },
-          "Spine.rotation": { x: -0.126, y: 0.007, z: -0.057 },
-          "Spine1.rotation": { x: -0.134, y: 0.009, z: 0.01 },
-          "Spine2.rotation": { x: -0.019, y: 0, z: -0.002 },
-          "Neck.rotation": { x: -0.159, y: 0.572, z: -0.108 },
-          "Head.rotation": { x: -0.064, y: 0.716, z: -0.257 },
-          "RightShoulder.rotation": { x: 1.625, y: -0.043, z: 1.382 },
-          "RightArm.rotation": { x: 0.746, y: -0.96, z: -1.009 },
-          "RightForeArm.rotation": { x: -0.199, y: -0.528, z: -0.38 },
-          "RightHand.rotation": { x: -0.261, y: -0.043, z: -0.027 },
-          "RightHandThumb1.rotation": { x: 0.172, y: -0.138, z: -0.445 },
-          "RightHandThumb2.rotation": { x: -0.158, y: 0.327, z: 0.545 },
-          "RightHandThumb3.rotation": { x: -0.062, y: 0.138, z: 0.152 },
-          "RightHandIndex1.rotation": { x: 0.328, y: -0.005, z: 0.132 },
-          "RightHandIndex2.rotation": { x: 0.303, y: 0.049, z: 0.028 },
-          "RightHandIndex3.rotation": { x: 0.241, y: 0.046, z: 0.077 },
-          "RightHandMiddle1.rotation": { x: 0.309, y: 0.074, z: 0.089 },
-          "RightHandMiddle2.rotation": { x: 0.392, y: 0.036, z: 0.081 },
-          "RightHandMiddle3.rotation": { x: 0.199, y: 0.014, z: 0.019 },
-          "RightHandRing1.rotation": { x: 0.239, y: 0.143, z: 0.091 },
-          "RightHandRing2.rotation": { x: 0.275, y: -0.02, z: 0.097 },
-          "RightHandRing3.rotation": { x: 0.248, y: -0.023, z: 0.061 },
-          "RightHandPinky1.rotation": { x: 0.211, y: 0.154, z: 0.029 },
-          "RightHandPinky2.rotation": { x: 0.348, y: -0.128, z: 0.144 },
-          "RightHandPinky3.rotation": { x: 0.21, y: -0.091, z: 0.065 },
-          "LeftShoulder.rotation": { x: 1.626, y: -0.027, z: -1.367 },
-          "LeftArm.rotation": { x: 1.048, y: 0.737, z: 0.712 },
-          "LeftForeArm.rotation": { x: -0.508, y: 0.879, z: 0.625 },
-          "LeftHand.rotation": { x: 0.06, y: -0.243, z: -0.079 },
-          "LeftHandThumb1.rotation": { x: 0.187, y: -0.072, z: 0.346 },
-          "LeftHandThumb2.rotation": { x: -0.066, y: 0.008, z: -0.256 },
-          "LeftHandThumb3.rotation": { x: -0.085, y: 0.014, z: -0.334 },
-          "LeftHandIndex1.rotation": { x: -0.1, y: 0.016, z: -0.058 },
-          "LeftHandIndex2.rotation": { x: 0.334, y: 0, z: 0 },
-          "LeftHandIndex3.rotation": { x: 0.281, y: 0, z: 0 },
-          "LeftHandMiddle1.rotation": { x: -0.056, y: 0, z: 0 },
-          "LeftHandMiddle2.rotation": { x: 0.258, y: 0, z: 0 },
-          "LeftHandMiddle3.rotation": { x: 0.26, y: 0, z: 0 },
-          "LeftHandRing1.rotation": { x: -0.067, y: -0.002, z: 0.008 },
-          "LeftHandRing2.rotation": { x: 0.259, y: 0, z: 0 },
-          "LeftHandRing3.rotation": { x: 0.276, y: 0, z: 0 },
-          "LeftHandPinky1.rotation": { x: -0.128, y: -0.007, z: 0.042 },
-          "LeftHandPinky2.rotation": { x: 0.227, y: 0, z: 0 },
-          "LeftHandPinky3.rotation": { x: 0.145, y: 0, z: 0 },
-          "RightUpLeg.rotation": { x: -1.507, y: 0.2, z: -3.043 },
-          "RightLeg.rotation": { x: -0.689, y: -0.124, z: 0.017 },
-          "RightFoot.rotation": { x: 0.909, y: 0.008, z: -0.093 },
-          "RightToeBase.rotation": { x: 0.842, y: 0.075, z: -0.008 },
-          "LeftUpLeg.rotation": { x: -1.449, y: -0.2, z: 3.018 },
-          "LeftLeg.rotation": { x: -0.74, y: -0.115, z: -0.008 },
-          "LeftFoot.rotation": { x: 1.048, y: -0.058, z: 0.117 },
-          "LeftToeBase.rotation": { x: 0.807, y: -0.067, z: 0.003 },
-        },
-      },
-
-      back: {
-        standing: true,
-        props: {
-          "Hips.position": { x: 0, y: 1, z: 0 },
-          "Hips.rotation": { x: -0.732, y: -1.463, z: -0.637 },
-          "Spine.rotation": { x: -0.171, y: 0.106, z: 0.157 },
-          "Spine1.rotation": { x: -0.044, y: 0.138, z: -0.059 },
-          "Spine2.rotation": { x: 0.082, y: 0.133, z: -0.074 },
-          "Neck.rotation": { x: 0.39, y: 0.591, z: -0.248 },
-          "Head.rotation": { x: -0.001, y: 0.596, z: -0.057 },
-          "LeftShoulder.rotation": { x: 1.676, y: 0.007, z: -1.892 },
-          "LeftArm.rotation": { x: -5.566, y: 1.188, z: -0.173 },
-          "LeftForeArm.rotation": { x: -0.673, y: -0.105, z: 1.702 },
-          "LeftHand.rotation": { x: -0.469, y: -0.739, z: 0.003 },
-          "LeftHandThumb1.rotation": { x: 0.876, y: 0.274, z: 0.793 },
-          "LeftHandThumb2.rotation": { x: 0.161, y: -0.23, z: -0.172 },
-          "LeftHandThumb3.rotation": { x: 0.078, y: 0.027, z: 0.156 },
-          "LeftHandIndex1.rotation": { x: -0.085, y: -0.002, z: 0.009 },
-          "LeftHandIndex2.rotation": { x: 0.176, y: 0, z: -0.002 },
-          "LeftHandIndex3.rotation": { x: -0.036, y: 0.001, z: -0.035 },
-          "LeftHandMiddle1.rotation": { x: 0.015, y: 0.144, z: -0.076 },
-          "LeftHandMiddle2.rotation": { x: 0.378, y: -0.007, z: -0.077 },
-          "LeftHandMiddle3.rotation": { x: -0.141, y: -0.001, z: 0.031 },
-          "LeftHandRing1.rotation": { x: 0.039, y: 0.02, z: -0.2 },
-          "LeftHandRing2.rotation": { x: 0.25, y: -0.002, z: -0.073 },
-          "LeftHandRing3.rotation": { x: 0.236, y: 0.006, z: -0.075 },
-          "LeftHandPinky1.rotation": { x: 0.172, y: -0.033, z: -0.275 },
-          "LeftHandPinky2.rotation": { x: 0.216, y: 0.043, z: -0.054 },
-          "LeftHandPinky3.rotation": { x: 0.325, y: 0.078, z: -0.13 },
-          "RightShoulder.rotation": { x: 2.015, y: -0.168, z: 1.706 },
-          "RightArm.rotation": { x: 0.203, y: -1.258, z: -0.782 },
-          "RightForeArm.rotation": { x: -0.658, y: -0.133, z: -1.401 },
-          "RightHand.rotation": { x: -1.504, y: 0.375, z: -0.005 },
-          "RightHandThumb1.rotation": { x: 0.413, y: -0.158, z: -1.121 },
-          "RightHandThumb2.rotation": { x: -0.142, y: -0.008, z: 0.209 },
-          "RightHandThumb3.rotation": { x: -0.091, y: 0.021, z: 0.142 },
-          "RightHandIndex1.rotation": { x: -0.167, y: 0.014, z: -0.072 },
-          "RightHandIndex2.rotation": { x: 0.474, y: 0.009, z: 0.051 },
-          "RightHandIndex3.rotation": { x: 0.115, y: 0.006, z: 0.047 },
-          "RightHandMiddle1.rotation": { x: 0.385, y: 0.019, z: 0.144 },
-          "RightHandMiddle2.rotation": { x: 0.559, y: 0.035, z: 0.101 },
-          "RightHandMiddle3.rotation": { x: 0.229, y: 0, z: 0.027 },
-          "RightHandRing1.rotation": { x: 0.48, y: 0.026, z: 0.23 },
-          "RightHandRing2.rotation": { x: 0.772, y: 0.038, z: 0.109 },
-          "RightHandRing3.rotation": { x: 0.622, y: 0.039, z: 0.106 },
-          "RightHandPinky1.rotation": { x: 0.767, y: 0.288, z: 0.353 },
-          "RightHandPinky2.rotation": { x: 0.886, y: 0.049, z: 0.122 },
-          "RightHandPinky3.rotation": { x: 0.662, y: 0.044, z: 0.113 },
-          "LeftUpLeg.rotation": { x: -0.206, y: -0.268, z: -3.343 },
-          "LeftLeg.rotation": { x: -0.333, y: 0.757, z: -0.043 },
-          "LeftFoot.rotation": { x: 1.049, y: 0.167, z: 0.287 },
-          "LeftToeBase.rotation": { x: 0.672, y: -0.069, z: -0.004 },
-          "RightUpLeg.rotation": { x: 0.055, y: -0.226, z: 3.037 },
-          "RightLeg.rotation": { x: -0.559, y: 0.39, z: -0.001 },
-          "RightFoot.rotation": { x: 1.2, y: 0.133, z: 0.085 },
-          "RightToeBase.rotation": { x: 0.92, y: 0.093, z: -0.013 },
-        },
-      },
-
-      straight: {
-        standing: true,
-        props: {
-          "Hips.position": { x: 0, y: 0.989, z: 0.001 },
-          "Hips.rotation": { x: 0.047, y: 0.007, z: -0.007 },
-          "Spine.rotation": { x: -0.143, y: -0.007, z: 0.005 },
-          "Spine1.rotation": { x: -0.043, y: -0.014, z: 0.012 },
-          "Spine2.rotation": { x: 0.072, y: -0.013, z: 0.013 },
-          "Neck.rotation": { x: 0.048, y: -0.003, z: 0.012 },
-          "Head.rotation": { x: 0.05, y: -0.02, z: -0.017 },
-          "LeftShoulder.rotation": { x: 1.62, y: -0.166, z: -1.605 },
-          "LeftArm.rotation": { x: 1.275, y: 0.544, z: -0.092 },
-          "LeftForeArm.rotation": { x: 0, y: 0, z: 0.302 },
-          "LeftHand.rotation": { x: -0.225, y: -0.154, z: 0.11 },
-          "LeftHandThumb1.rotation": { x: 0.435, y: -0.044, z: 0.457 },
-          "LeftHandThumb2.rotation": { x: -0.028, y: 0.002, z: -0.246 },
-          "LeftHandThumb3.rotation": { x: -0.236, y: -0.025, z: 0.113 },
-          "LeftHandIndex1.rotation": { x: 0.218, y: 0.008, z: -0.081 },
-          "LeftHandIndex2.rotation": { x: 0.165, y: -0.001, z: -0.017 },
-          "LeftHandIndex3.rotation": { x: 0.165, y: -0.001, z: -0.017 },
-          "LeftHandMiddle1.rotation": { x: 0.235, y: -0.011, z: -0.065 },
-          "LeftHandMiddle2.rotation": { x: 0.182, y: -0.002, z: -0.019 },
-          "LeftHandMiddle3.rotation": { x: 0.182, y: -0.002, z: -0.019 },
-          "LeftHandRing1.rotation": { x: 0.316, y: -0.017, z: 0.008 },
-          "LeftHandRing2.rotation": { x: 0.253, y: -0.003, z: -0.026 },
-          "LeftHandRing3.rotation": { x: 0.255, y: -0.003, z: -0.026 },
-          "LeftHandPinky1.rotation": { x: 0.336, y: -0.062, z: 0.088 },
-          "LeftHandPinky2.rotation": { x: 0.276, y: -0.004, z: -0.028 },
-          "LeftHandPinky3.rotation": { x: 0.276, y: -0.004, z: -0.028 },
-          "RightShoulder.rotation": { x: 1.615, y: 0.064, z: 1.53 },
-          "RightArm.rotation": { x: 1.313, y: -0.424, z: 0.131 },
-          "RightForeArm.rotation": { x: 0, y: 0, z: -0.317 },
-          "RightHand.rotation": { x: -0.158, y: -0.639, z: -0.196 },
-          "RightHandThumb1.rotation": { x: 0.44, y: 0.048, z: -0.549 },
-          "RightHandThumb2.rotation": { x: -0.056, y: -0.008, z: 0.274 },
-          "RightHandThumb3.rotation": { x: -0.258, y: 0.031, z: -0.095 },
-          "RightHandIndex1.rotation": { x: 0.169, y: -0.011, z: 0.105 },
-          "RightHandIndex2.rotation": { x: 0.134, y: 0.001, z: 0.011 },
-          "RightHandIndex3.rotation": { x: 0.134, y: 0.001, z: 0.011 },
-          "RightHandMiddle1.rotation": { x: 0.288, y: 0.014, z: 0.092 },
-          "RightHandMiddle2.rotation": { x: 0.248, y: 0.003, z: 0.02 },
-          "RightHandMiddle3.rotation": { x: 0.249, y: 0.003, z: 0.02 },
-          "RightHandRing1.rotation": { x: 0.369, y: 0.019, z: 0.006 },
-          "RightHandRing2.rotation": { x: 0.321, y: 0.004, z: 0.026 },
-          "RightHandRing3.rotation": { x: 0.323, y: 0.004, z: 0.026 },
-          "RightHandPinky1.rotation": { x: 0.468, y: 0.085, z: -0.03 },
-          "RightHandPinky2.rotation": { x: 0.427, y: 0.007, z: 0.034 },
-          "RightHandPinky3.rotation": { x: 0.142, y: 0.001, z: 0.012 },
-          "LeftUpLeg.rotation": { x: -0.077, y: -0.058, z: 3.126 },
-          "LeftLeg.rotation": { x: -0.252, y: 0.001, z: -0.018 },
-          "LeftFoot.rotation": { x: 1.315, y: -0.064, z: 0.315 },
-          "LeftToeBase.rotation": { x: 0.577, y: -0.07, z: -0.009 },
-          "RightUpLeg.rotation": { x: -0.083, y: -0.032, z: 3.124 },
-          "RightLeg.rotation": { x: -0.272, y: -0.003, z: 0.021 },
-          "RightFoot.rotation": { x: 1.342, y: 0.076, z: -0.222 },
-          "RightToeBase.rotation": { x: 0.44, y: 0.069, z: 0.016 },
-        },
-      },
-
-      // wide: {
-      //   standing: true,
-      //   props: {
-      //     "Hips.position": { x: 0, y: 1.017, z: 0.016 },
-      //     "Hips.rotation": { x: 0.064, y: -0.048, z: 0.059 },
-      //     "Spine.rotation": { x: -0.123, y: 0, z: -0.018 },
-      //     "Spine1.rotation": { x: 0.014, y: 0.003, z: -0.006 },
-      //     "Spine2.rotation": { x: 0.04, y: 0.003, z: -0.007 },
-      //     "Neck.rotation": { x: 0.101, y: 0.007, z: -0.035 },
-      //     "Head.rotation": { x: -0.091, y: -0.049, z: 0.105 },
-      //     "RightShoulder.rotation": { x: 1.831, y: 0.017, z: 1.731 },
-      //     "RightArm.rotation": { x: -1.673, y: -1.102, z: -3.132 },
-      //     "RightForeArm.rotation": { x: 0.265, y: 0.23, z: -0.824 },
-      //     "RightHand.rotation": { x: -0.52, y: 0.345, z: -0.061 },
-      //     "RightHandThumb1.rotation": { x: 0.291, y: 0.056, z: -0.428 },
-      //     "RightHandThumb2.rotation": { x: 0.025, y: 0.005, z: 0.166 },
-      //     "RightHandThumb3.rotation": { x: -0.089, y: 0.009, z: 0.068 },
-      //     "RightHandIndex1.rotation": { x: 0.392, y: -0.015, z: 0.11 },
-      //     "RightHandIndex2.rotation": { x: 0.391, y: 0.001, z: 0.004 },
-      //     "RightHandIndex3.rotation": { x: 0.326, y: 0, z: 0.003 },
-      //     "RightHandMiddle1.rotation": { x: 0.285, y: 0.068, z: 0.081 },
-      //     "RightHandMiddle2.rotation": { x: 0.519, y: 0.004, z: 0.011 },
-      //     "RightHandMiddle3.rotation": { x: 0.252, y: 0, z: 0.001 },
-      //     "RightHandRing1.rotation": { x: 0.207, y: 0.133, z: 0.146 },
-      //     "RightHandRing2.rotation": { x: 0.597, y: 0.004, z: 0.004 },
-      //     "RightHandRing3.rotation": { x: 0.292, y: 0.002, z: 0.012 },
-      //     "RightHandPinky1.rotation": { x: 0.338, y: 0.182, z: 0.136 },
-      //     "RightHandPinky2.rotation": { x: 0.533, y: 0.002, z: 0.004 },
-      //     "RightHandPinky3.rotation": { x: 0.194, y: 0, z: 0.002 },
-      //     "LeftShoulder.rotation": { x: 1.83, y: -0.063, z: -1.808 },
-      //     "LeftArm.rotation": { x: -1.907, y: 1.228, z: -2.959 },
-      //     "LeftForeArm.rotation": { x: -0.159, y: 0.268, z: 0.572 },
-      //     "LeftHand.rotation": { x: 0.069, y: -0.498, z: -0.025 },
-      //     "LeftHandThumb1.rotation": { x: 0.738, y: 0.123, z: 0.178 },
-      //     "LeftHandThumb2.rotation": { x: -0.26, y: 0.028, z: -0.477 },
-      //     "LeftHandThumb3.rotation": { x: -0.448, y: 0.093, z: -0.661 },
-      //     "LeftHandIndex1.rotation": { x: 1.064, y: 0.005, z: -0.13 },
-      //     "LeftHandIndex2.rotation": { x: 1.55, y: -0.143, z: -0.136 },
-      //     "LeftHandIndex3.rotation": { x: 0.722, y: -0.076, z: -0.127 },
-      //     "LeftHandMiddle1.rotation": { x: 1.095, y: -0.091, z: 0.006 },
-      //     "LeftHandMiddle2.rotation": { x: 1.493, y: -0.174, z: -0.151 },
-      //     "LeftHandMiddle3.rotation": { x: 0.651, y: -0.031, z: -0.087 },
-      //     "LeftHandRing1.rotation": { x: 1.083, y: -0.224, z: 0.072 },
-      //     "LeftHandRing2.rotation": { x: 1.145, y: -0.107, z: -0.195 },
-      //     "LeftHandRing3.rotation": { x: 1.208, y: -0.134, z: -0.158 },
-      //     "LeftHandPinky1.rotation": { x: 0.964, y: -0.383, z: 0.128 },
-      //     "LeftHandPinky2.rotation": { x: 1.457, y: -0.146, z: -0.159 },
-      //     "LeftHandPinky3.rotation": { x: 1.019, y: -0.102, z: -0.141 },
-      //     "RightUpLeg.rotation": { x: -0.221, y: -0.233, z: 2.87 },
-      //     "RightLeg.rotation": { x: -0.339, y: -0.043, z: -0.041 },
-      //     "RightFoot.rotation": { x: 1.081, y: 0.177, z: 0.114 },
-      //     "RightToeBase.rotation": { x: 0.775, y: 0, z: 0 },
-      //     "LeftUpLeg.rotation": { x: -0.185, y: 0.184, z: 3.131 },
-      //     "LeftLeg.rotation": { x: -0.408, y: 0.129, z: 0.02 },
-      //     "LeftFoot.rotation": { x: 1.167, y: -0.002, z: -0.007 },
-      //     "LeftToeBase.rotation": { x: 0.723, y: 0, z: 0 },
-      //   },
-      // },
-
-      oneknee: {
-        kneeling: true,
-        props: {
-          "Hips.position": { x: -0.005, y: 0.415, z: -0.017 },
-          "Hips.rotation": { x: -0.25, y: 0.04, z: -0.238 },
-          "Spine.rotation": { x: 0.037, y: 0.043, z: 0.047 },
-          "Spine1.rotation": { x: 0.317, y: 0.103, z: 0.066 },
-          "Spine2.rotation": { x: 0.433, y: 0.109, z: 0.054 },
-          "Neck.rotation": { x: -0.156, y: -0.092, z: 0.059 },
-          "Head.rotation": { x: -0.398, y: -0.032, z: 0.018 },
-          "RightShoulder.rotation": { x: 1.546, y: 0.119, z: 1.528 },
-          "RightArm.rotation": { x: 0.896, y: -0.247, z: -0.512 },
-          "RightForeArm.rotation": { x: 0.007, y: 0, z: -1.622 },
-          "RightHand.rotation": { x: 1.139, y: -0.853, z: 0.874 },
-          "RightHandThumb1.rotation": { x: 0.176, y: 0.107, z: -0.311 },
-          "RightHandThumb2.rotation": { x: -0.047, y: -0.003, z: 0.12 },
-          "RightHandThumb3.rotation": { x: 0, y: 0, z: 0 },
-          "RightHandIndex1.rotation": { x: 0.186, y: 0.005, z: 0.125 },
-          "RightHandIndex2.rotation": { x: 0.454, y: 0.005, z: 0.015 },
-          "RightHandIndex3.rotation": { x: 0, y: 0, z: 0 },
-          "RightHandMiddle1.rotation": { x: 0.444, y: 0.035, z: 0.127 },
-          "RightHandMiddle2.rotation": { x: 0.403, y: -0.006, z: -0.04 },
-          "RightHandMiddle3.rotation": { x: 0, y: 0, z: 0 },
-          "RightHandRing1.rotation": { x: 0.543, y: 0.074, z: 0.121 },
-          "RightHandRing2.rotation": { x: 0.48, y: -0.018, z: -0.063 },
-          "RightHandRing3.rotation": { x: 0, y: 0, z: 0 },
-          "RightHandPinky1.rotation": { x: 0.464, y: 0.086, z: 0.113 },
-          "RightHandPinky2.rotation": { x: 0.667, y: -0.06, z: -0.128 },
-          "RightHandPinky3.rotation": { x: 0, y: 0, z: 0 },
-          "LeftShoulder.rotation": { x: 1.545, y: -0.116, z: -1.529 },
-          "LeftArm.rotation": { x: 0.799, y: 0.631, z: 0.556 },
-          "LeftForeArm.rotation": { x: -0.002, y: 0.007, z: 0.926 },
-          "LeftHand.rotation": { x: -0.508, y: 0.439, z: 0.502 },
-          "LeftHandThumb1.rotation": { x: 0.651, y: -0.035, z: 0.308 },
-          "LeftHandThumb2.rotation": { x: -0.053, y: 0.008, z: -0.11 },
-          "LeftHandThumb3.rotation": { x: 0, y: 0, z: 0 },
-          "LeftHandIndex1.rotation": { x: 0.662, y: -0.053, z: -0.116 },
-          "LeftHandIndex2.rotation": { x: 0.309, y: -0.004, z: -0.02 },
-          "LeftHandIndex3.rotation": { x: 0, y: 0, z: 0 },
-          "LeftHandMiddle1.rotation": { x: 0.501, y: -0.062, z: -0.12 },
-          "LeftHandMiddle2.rotation": { x: 0.144, y: -0.002, z: 0.016 },
-          "LeftHandMiddle3.rotation": { x: 0, y: 0, z: 0 },
-          "LeftHandRing1.rotation": { x: 0.397, y: -0.029, z: -0.143 },
-          "LeftHandRing2.rotation": { x: 0.328, y: 0.01, z: 0.059 },
-          "LeftHandRing3.rotation": { x: 0, y: 0, z: 0 },
-          "LeftHandPinky1.rotation": { x: 0.194, y: 0.008, z: -0.164 },
-          "LeftHandPinky2.rotation": { x: 0.38, y: 0.031, z: 0.128 },
-          "LeftHandPinky3.rotation": { x: 0, y: 0, z: 0 },
-          "RightUpLeg.rotation": { x: -1.594, y: -0.251, z: 2.792 },
-          "RightLeg.rotation": { x: -2.301, y: -0.073, z: 0.055 },
-          "RightFoot.rotation": { x: 1.553, y: -0.207, z: -0.094 },
-          "RightToeBase.rotation": { x: 0.459, y: 0.069, z: 0.016 },
-          "LeftUpLeg.rotation": { x: -0.788, y: -0.236, z: -2.881 },
-          "LeftLeg.rotation": { x: -2.703, y: 0.012, z: -0.047 },
-          "LeftFoot.rotation": { x: 2.191, y: -0.102, z: 0.019 },
-          "LeftToeBase.rotation": { x: 1.215, y: -0.027, z: 0.01 },
-        },
-      },
-
-      kneel: {
-        kneeling: true,
-        lying: true,
-        props: {
-          "Hips.position": { x: 0, y: 0.532, z: -0.002 },
-          "Hips.rotation": { x: 0.018, y: -0.008, z: -0.017 },
-          "Spine.rotation": { x: -0.139, y: -0.01, z: 0.002 },
-          "Spine1.rotation": { x: 0.002, y: -0.002, z: 0.001 },
-          "Spine2.rotation": { x: 0.028, y: -0.002, z: 0.001 },
-          "Neck.rotation": { x: -0.007, y: 0, z: -0.002 },
-          "Head.rotation": { x: -0.02, y: -0.008, z: -0.004 },
-          "LeftShoulder.rotation": { x: 1.77, y: -0.428, z: -1.588 },
-          "LeftArm.rotation": { x: 0.911, y: 0.343, z: 0.083 },
-          "LeftForeArm.rotation": { x: 0, y: 0, z: 0.347 },
-          "LeftHand.rotation": { x: 0.033, y: -0.052, z: -0.105 },
-          "LeftHandThumb1.rotation": { x: 0.508, y: -0.22, z: 0.708 },
-          "LeftHandThumb2.rotation": { x: -0.323, y: -0.139, z: -0.56 },
-          "LeftHandThumb3.rotation": { x: -0.328, y: 0.16, z: -0.301 },
-          "LeftHandIndex1.rotation": { x: 0.178, y: 0.248, z: 0.045 },
-          "LeftHandIndex2.rotation": { x: 0.236, y: -0.002, z: -0.019 },
-          "LeftHandIndex3.rotation": { x: -0.062, y: 0, z: 0.005 },
-          "LeftHandMiddle1.rotation": { x: 0.123, y: -0.005, z: -0.019 },
-          "LeftHandMiddle2.rotation": { x: 0.589, y: -0.014, z: -0.045 },
-          "LeftHandMiddle3.rotation": { x: 0.231, y: -0.002, z: -0.019 },
-          "LeftHandRing1.rotation": { x: 0.196, y: -0.008, z: -0.091 },
-          "LeftHandRing2.rotation": { x: 0.483, y: -0.009, z: -0.038 },
-          "LeftHandRing3.rotation": { x: 0.367, y: -0.005, z: -0.029 },
-          "LeftHandPinky1.rotation": { x: 0.191, y: -0.269, z: -0.246 },
-          "LeftHandPinky2.rotation": { x: 0.37, y: -0.006, z: -0.029 },
-          "LeftHandPinky3.rotation": { x: 0.368, y: -0.005, z: -0.029 },
-          "RightShoulder.rotation": { x: 1.73, y: 0.434, z: 1.715 },
-          "RightArm.rotation": { x: 0.841, y: -0.508, z: -0.155 },
-          "RightForeArm.rotation": { x: 0, y: 0, z: -0.355 },
-          "RightHand.rotation": { x: 0.091, y: 0.137, z: 0.197 },
-          "RightHandThumb1.rotation": { x: 0.33, y: 0.051, z: -0.753 },
-          "RightHandThumb2.rotation": { x: -0.113, y: 0.075, z: 0.612 },
-          "RightHandThumb3.rotation": { x: -0.271, y: -0.166, z: 0.164 },
-          "RightHandIndex1.rotation": { x: 0.073, y: 0.001, z: -0.093 },
-          "RightHandIndex2.rotation": { x: 0.338, y: 0.006, z: 0.034 },
-          "RightHandIndex3.rotation": { x: 0.131, y: 0.001, z: 0.013 },
-          "RightHandMiddle1.rotation": { x: 0.13, y: 0.005, z: -0.017 },
-          "RightHandMiddle2.rotation": { x: 0.602, y: 0.018, z: 0.058 },
-          "RightHandMiddle3.rotation": { x: -0.031, y: 0, z: -0.003 },
-          "RightHandRing1.rotation": { x: 0.351, y: 0.019, z: 0.045 },
-          "RightHandRing2.rotation": { x: 0.19, y: 0.002, z: 0.019 },
-          "RightHandRing3.rotation": { x: 0.21, y: 0.002, z: 0.021 },
-          "RightHandPinky1.rotation": { x: 0.256, y: 0.17, z: 0.118 },
-          "RightHandPinky2.rotation": { x: 0.451, y: 0.01, z: 0.045 },
-          "RightHandPinky3.rotation": { x: 0.346, y: 0.006, z: 0.035 },
-          "LeftUpLeg.rotation": { x: -0.06, y: 0.1, z: -2.918 },
-          "LeftLeg.rotation": { x: -1.933, y: -0.01, z: 0.011 },
-          "LeftFoot.rotation": { x: 0.774, y: -0.162, z: -0.144 },
-          "LeftToeBase.rotation": { x: 1.188, y: 0, z: 0 },
-          "RightUpLeg.rotation": { x: -0.099, y: -0.057, z: 2.922 },
-          "RightLeg.rotation": { x: -1.93, y: 0.172, z: -0.02 },
-          "RightFoot.rotation": { x: 0.644, y: 0.251, z: 0.212 },
-          "RightToeBase.rotation": { x: 0.638, y: -0.034, z: -0.001 },
-        },
-      },
-
-      sitting: {
-        sitting: true,
-        lying: true,
-        props: {
-          "Hips.position": { x: 0, y: 0.117, z: 0.005 },
-          "Hips.rotation": { x: -0.411, y: -0.049, z: 0.056 },
-          "Spine.rotation": { x: 0.45, y: -0.039, z: -0.116 },
-          "Spine1.rotation": { x: 0.092, y: -0.076, z: 0.08 },
-          "Spine2.rotation": { x: 0.073, y: 0.035, z: 0.066 },
-          "Neck.rotation": { x: 0.051, y: 0.053, z: -0.079 },
-          "Head.rotation": { x: -0.169, y: 0.009, z: 0.034 },
-          "LeftShoulder.rotation": { x: 1.756, y: -0.037, z: -1.301 },
-          "LeftArm.rotation": { x: -0.098, y: 0.016, z: 1.006 },
-          "LeftForeArm.rotation": { x: -0.089, y: 0.08, z: 0.837 },
-          "LeftHand.rotation": { x: 0.262, y: -0.399, z: 0.3 },
-          "LeftHandThumb1.rotation": { x: 0.149, y: -0.043, z: 0.452 },
-          "LeftHandThumb2.rotation": { x: 0.032, y: 0.006, z: -0.162 },
-          "LeftHandThumb3.rotation": { x: -0.086, y: -0.005, z: -0.069 },
-          "LeftHandIndex1.rotation": { x: 0.145, y: 0.032, z: -0.069 },
-          "LeftHandIndex2.rotation": { x: 0.325, y: -0.001, z: -0.004 },
-          "LeftHandIndex3.rotation": { x: 0.253, y: 0, z: -0.003 },
-          "LeftHandMiddle1.rotation": { x: 0.186, y: -0.051, z: -0.091 },
-          "LeftHandMiddle2.rotation": { x: 0.42, y: -0.003, z: -0.011 },
-          "LeftHandMiddle3.rotation": { x: 0.153, y: 0.001, z: -0.001 },
-          "LeftHandRing1.rotation": { x: 0.087, y: -0.19, z: -0.078 },
-          "LeftHandRing2.rotation": { x: 0.488, y: -0.004, z: -0.005 },
-          "LeftHandRing3.rotation": { x: 0.183, y: -0.001, z: -0.012 },
-          "LeftHandPinky1.rotation": { x: 0.205, y: -0.262, z: 0.051 },
-          "LeftHandPinky2.rotation": { x: 0.407, y: -0.002, z: -0.004 },
-          "LeftHandPinky3.rotation": { x: 0.068, y: 0, z: -0.002 },
-          "RightShoulder.rotation": { x: 1.619, y: -0.139, z: 1.179 },
-          "RightArm.rotation": { x: 0.17, y: -0.037, z: -1.07 },
-          "RightForeArm.rotation": { x: -0.044, y: -0.056, z: -0.665 },
-          "RightHand.rotation": { x: 0.278, y: 0.454, z: -0.253 },
-          "RightHandThumb1.rotation": { x: 0.173, y: 0.089, z: -0.584 },
-          "RightHandThumb2.rotation": { x: -0.003, y: -0.004, z: 0.299 },
-          "RightHandThumb3.rotation": { x: -0.133, y: -0.002, z: 0.235 },
-          "RightHandIndex1.rotation": { x: 0.393, y: -0.023, z: 0.108 },
-          "RightHandIndex2.rotation": { x: 0.391, y: 0.001, z: 0.004 },
-          "RightHandIndex3.rotation": { x: 0.326, y: 0, z: 0.003 },
-          "RightHandMiddle1.rotation": { x: 0.285, y: 0.062, z: 0.086 },
-          "RightHandMiddle2.rotation": { x: 0.519, y: 0.003, z: 0.011 },
-          "RightHandMiddle3.rotation": { x: 0.252, y: -0.001, z: 0.001 },
-          "RightHandRing1.rotation": { x: 0.207, y: 0.122, z: 0.155 },
-          "RightHandRing2.rotation": { x: 0.597, y: 0.004, z: 0.005 },
-          "RightHandRing3.rotation": { x: 0.292, y: 0.001, z: 0.012 },
-          "RightHandPinky1.rotation": { x: 0.338, y: 0.171, z: 0.149 },
-          "RightHandPinky2.rotation": { x: 0.533, y: 0.002, z: 0.004 },
-          "RightHandPinky3.rotation": { x: 0.194, y: 0, z: 0.002 },
-          "LeftUpLeg.rotation": { x: -1.957, y: 0.083, z: -2.886 },
-          "LeftLeg.rotation": { x: -1.46, y: 0.123, z: 0.005 },
-          "LeftFoot.rotation": { x: -0.013, y: 0.016, z: 0.09 },
-          "LeftToeBase.rotation": { x: 0.744, y: 0, z: 0 },
-          "RightUpLeg.rotation": { x: -1.994, y: 0.125, z: 2.905 },
-          "RightLeg.rotation": { x: -1.5, y: -0.202, z: -0.006 },
-          "RightFoot.rotation": { x: -0.012, y: -0.065, z: 0.081 },
-          "RightToeBase.rotation": { x: 0.758, y: 0, z: 0 },
-        },
-      },
-    };
+    this.poseTemplates = opt.poseTemplates;
 
     // Gestures
     // NOTE: For one hand gestures, use left left
@@ -694,11 +99,11 @@ class TalkingHead {
       handup: {
         "LeftShoulder.rotation": { x: [1.5, 2, 1, 2], y: [0.2, 0.4, 1, 2], z: [-1.5, -1.3, 1, 2] },
         "LeftArm.rotation": { x: [1.5, 1.7, 1, 2], y: [-0.6, -0.4, 1, 2], z: [1, 1.2, 1, 2] },
-        "LeftForeArm.rotation": { x: -0.815, y: [-0.4, 0, 1, 2], z: 1.575 },
-        "LeftHand.rotation": { x: -0.529, y: -0.2, z: 0.022 },
-        "LeftHandThumb1.rotation": { x: 0.745, y: -0.526, z: 0.604 },
-        "LeftHandThumb2.rotation": { x: -1.5, y: -0.01, z: -0.142 },
-        "LeftHandThumb3.rotation": { x: 0, y: 0.001, z: 0 },
+        "LeftForeArm.rotation": { x: 1, y: [0.5, 0, 1, 2], z: 1.575 },
+        "LeftHand.rotation": { x: 0.529, y: -0.2, z: -0.022 },
+        "LeftHandThumb1.rotation": { x: -0.1, y: 0.5, z: 0 },
+        "LeftHandThumb2.rotation": { x: 1.1, y: 0, z: 0 },
+        "LeftHandThumb3.rotation": { x: 0.5, y: 0, z: 0 },
         "LeftHandIndex1.rotation": { x: 0, y: 0.5, z: -0.08 },
         "LeftHandIndex2.rotation": { x: 0.15, y: 0.02, z: -0.06 },
         "LeftHandIndex3.rotation": { x: 0, y: 0, z: 0 },
@@ -1543,12 +948,6 @@ class TalkingHead {
           noseSneerRight: [0.4],
         },
       },
-      // "😝": { dt: [300, 100, 1500, 500, 500], rescale: [0, 0, 1, 0, 0], vs: { browInnerUp: [0.8], eyesClosed: [1], jawOpen: [0.7], mouthFunnel: [0.5], mouthSmile: [1], tongueOut: [0, 1, 1, 0] } },
-      // "😋": { link: "😝" },
-      // "😛": { link: "😝" },
-      // "😛": { link: "😝" },
-      // "😜": { link: "😝" },
-      // "🤪": { link: "😝" },
       "😂": {
         dt: [300, 2000],
         rescale: [0, 1],
@@ -1835,7 +1234,7 @@ class TalkingHead {
 
       "😴": { dt: [5000, 5000], rescale: [0, 1], vs: { eyeBlinkLeft: [1], eyeBlinkRight: [1], bodyRotateX: [0.2], bodyRotateZ: [0.1] } },
 
-      "✋": { dt: [300, 2000], rescale: [0, 1], vs: { mouthSmile: [0.5], gesture: [["handup", 10, true], null] } },
+      "✋": { dt: [300, 2000], rescale: [0, 1], vs: { mouthSmile: [0.5], gesture: [["handup", 200, true], null] } },
       "🤚": { dt: [300, 2000], rescale: [0, 1], vs: { mouthSmile: [0.5], gesture: [["handup", 10], null] } },
       "👍": { dt: [300, 2000], rescale: [0, 1], vs: { mouthSmile: [0.5], gesture: [["thumbup", 2], null] } },
       "👎": {
@@ -1914,8 +1313,8 @@ class TalkingHead {
     this.mtMaxDefault = 1;
     this.mtMaxExceptions = {};
     this.mtLimits = {
-      eyeBlinkLeft: v => Math.max(v, (this.mtAvatar["eyesLookDown"].value + this.mtAvatar["browDownLeft"].value) / 2),
-      eyeBlinkRight: v => Math.max(v, (this.mtAvatar["eyesLookDown"].value + this.mtAvatar["browDownRight"].value) / 2),
+      // eyeBlinkLeft: v => Math.max(v, (this.mtAvatar["eyesLookDown"].value + this.mtAvatar["browDownLeft"].value) / 2),
+      // eyeBlinkRight: v => Math.max(v, (this.mtAvatar["eyesLookDown"].value + this.mtAvatar["browDownRight"].value) / 2),
     };
     this.mtOnchange = {
       eyesLookDown: () => {
@@ -2052,10 +1451,6 @@ class TalkingHead {
     this.lightDirect.position.set(5, 10, 5);
     this.setLighting(this.opt);
 
-    // const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
-    // pmremGenerator.compileEquirectangularShader();
-    // this.scene.environment = pmremGenerator.fromScene(new RoomEnvironment()).texture;
-
     this.resizeobserver = new ResizeObserver(this.onResize.bind(this));
     this.resizeobserver.observe(this.nodeAvatar);
 
@@ -2116,10 +1511,6 @@ class TalkingHead {
     this.streamLipsyncQueue = [];
   }
 
-  /**
-   * Helper that re/creates the audio context and the other nodes.
-   * @param {number} sampleRate
-   */
   initAudioGraph(sampleRate = null) {
     // Close existing context if it exists
     if (this.audioCtx && this.audioCtx.state !== "closed") {
@@ -2161,32 +1552,16 @@ class TalkingHead {
     this.workletLoaded = false;
   }
 
-  /**
-   * Helper that returns the parameter or, if it is a function, its return value.
-   * @param {Any} x Parameter
-   * @return {Any} Value
-   */
   valueFn(x) {
     return typeof x === "function" ? x() : x;
   }
 
-  /**
-   * Helper to deep copy and edit an object.
-   * @param {Object} x Object to copy and edit
-   * @param {function} [editFn=null] Callback function for editing the new object
-   * @return {Object} Deep copy of the object.
-   */
   deepCopy(x, editFn = null) {
     const o = JSON.parse(JSON.stringify(x));
     if (editFn && typeof editFn === "function") editFn(o);
     return o;
   }
 
-  /**
-   * Convert a Base64 MP3 chunk to ArrayBuffer.
-   * @param {string} chunk Base64 encoded chunk
-   * @return {ArrayBuffer} ArrayBuffer
-   */
   b64ToArrayBuffer(chunk) {
     // Calculate the needed total buffer length
     let bufLen = (3 * chunk.length) / 4;
@@ -2221,11 +1596,6 @@ class TalkingHead {
     return arrBuf;
   }
 
-  /**
-   * Concatenate an array of ArrayBuffers.
-   * @param {ArrayBuffer[]} bufs Array of ArrayBuffers
-   * @return {ArrayBuffer} Concatenated ArrayBuffer
-   */
   concatArrayBuffers(bufs) {
     if (bufs.length === 1) return bufs[0];
     let len = 0;
@@ -2242,12 +1612,6 @@ class TalkingHead {
     return buf;
   }
 
-  /**
-   * Convert PCM buffer to AudioBuffer.
-   * NOTE: Only signed 16bit little endian supported.
-   * @param {ArrayBuffer} buf PCM buffer
-   * @return {AudioBuffer} AudioBuffer
-   */
   pcmToAudioBuffer(buf) {
     const arr = new Int16Array(buf);
     const floats = new Float32Array(arr.length);
@@ -2259,12 +1623,6 @@ class TalkingHead {
     return audio;
   }
 
-  /**
-   * Convert internal notation to THREE objects.
-   * NOTE: All rotations are converted to quaternions.
-   * @param {Object} p Pose
-   * @return {Object} A new pose object.
-   */
   propsToThreeObjects(p) {
     const r = {};
     for (let [key, val] of Object.entries(p)) {
@@ -2286,10 +1644,6 @@ class TalkingHead {
     return r;
   }
 
-  /**
-   * Clear 3D object.
-   * @param {Object} obj Object
-   */
   clearThree(obj) {
     while (obj.children.length) {
       this.clearThree(obj.children[0]);
@@ -2307,113 +1661,20 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Loader for 3D avatar model.
-   * @param {string} avatar Avatar object with 'url' property to GLTF/GLB file.
-   * @param {progressfn} [onprogress=null] Callback for progress
-   */
   async showAvatar(avatar, onprogress = null) {
-    // Checkt the avatar parameter
     if (!avatar || !avatar.hasOwnProperty("url")) {
       throw new Error("Invalid parameter. The avatar must have at least 'url' specified.");
     }
-
-    // Loader
     const loader = new GLTFLoader();
-
-    // Check if draco loading enabled
     if (this.dracoEnabled) {
       const dracoLoader = new DRACOLoader();
       dracoLoader.setDecoderPath(this.dracoDecoderPath);
       loader.setDRACOLoader(dracoLoader);
     }
     let gltf = await loader.loadAsync(avatar.url, onprogress);
-    const model = gltf.scene;
-
-    this.scene.add(model);
-    // 创建 logo 平面
-    const textureLoader = new THREE.TextureLoader();
-    const logoTexture = textureLoader.load("/image/bnb.png");
-    const logo = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.06, 0.06), // 尺寸可调
-      new THREE.MeshBasicMaterial({
-        map: logoTexture,
-        transparent: true,
-        side: THREE.DoubleSide,
-      }),
-    );
-
-    // 获取胸部骨骼
-    const chestBone = model.getObjectByName("Spine2");
-    if (!chestBone) {
-      console.error("未找到 Spine2 骨骼");
-      return;
-    }
-
-    // 添加到骨骼下
-    chestBone.add(logo);
-
-    // 调整 logo 的相对位置（试着微调到左胸）
-    logo.position.set(0.11, 0.1, 0.1); // X向左/右，Y向上/下，Z向前/后
-    logo.rotation.y = Math.PI * 0.12; // 稍微朝外倾斜一点
-    logo.rotation.x = -Math.PI * 0.12; // 稍微朝外倾斜一点
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    // === 鼠标事件监听 ===
-    window.addEventListener("click", event => {
-      // 将鼠标坐标归一化到 [-1, 1]
-      const rect = this.renderer.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-      // 用摄像机和鼠标位置更新射线
-      raycaster.setFromCamera(mouse, this.camera);
-
-      // 检测点击的对象
-      if (!logo) return;
-      const intersects = raycaster.intersectObject(logo, true);
-
-      if (intersects.length > 0) {
-        console.log("🎯 点击到 logo！");
-      }
-    });
-    // const HeadBone = model.getObjectByName("Head");
-    // // === 🟢 创建“恭喜发财”标签 ===
-
-    // const div = document.createElement("div");
-    // div.textContent = "恭喜发财";
-    // div.style.color = "#FFD700";
-    // div.style.fontSize = "20px";
-    // div.style.fontWeight = "bold";
-    // div.style.textShadow = "0 0 6px #FF0000";
-    // div.style.padding = "4px 10px";
-    // div.style.background = "rgba(0, 0, 0, 0.3)";
-    // div.style.borderRadius = "8px";
-    // div.style.userSelect = "none";
-    // div.style.fontFamily = "KaiTi, sans-serif";
-    // div.style.animation = "float 2s ease-in-out infinite";
-    // div.style.writingMode = "vertical-rl"; // 从上到下，竖排（right to left）
-    // div.style.textOrientation = "upright"; // 每个字直立，不旋转
-
-    // const label = new CSS2DObject(div);
-
-    // // 相对于头部的偏移位置（往上 0.25 米左右）
-    // label.position.set(0, 0.25, 0);
-    // HeadBone.add(label);
-
-    const qunzi = model.getObjectByName("Wolf3D_Outfit_waiqunzi");
-    if (qunzi) {
-      // qunzi.visible = false; // 隐藏
-      qunzi.visible = true; // 显示
-    }
-
-    const carglft = await loader.loadAsync("/model/bic_car.glb");
-    // 调整车的位置 在第一个模型背后
-
-    // 车头向前
-    carglft.scene.rotation.set(0, -0.6, 0);
-    carglft.scene.position.set(-1, 0.5, -2);
-    this.scene.add(carglft.scene);
+    this.model = gltf.scene;
+    this.scene.add(this.model);
+    // this.setLogo("/image/bnb.png");
 
     // Check the gltf
     const required = [this.opt.modelRoot];
@@ -2438,15 +1699,14 @@ class TalkingHead {
 
     // Avatar full-body
     this.armature = gltf.scene.getObjectByName(this.opt.modelRoot);
-    this.armature.scale.setScalar(1);
+    this.armature?.scale.setScalar(1);
 
     // Morph targets
     this.morphs = [];
-    this.armature.traverse(x => {
+    this.armature?.traverse(x => {
       if (x.morphTargetInfluences && x.morphTargetInfluences.length && x.morphTargetDictionary) {
         this.morphs.push(x);
       }
-
       // Workaround for #40, hands culled from the rendering process
       x.frustumCulled = false;
     });
@@ -2568,12 +1828,97 @@ class TalkingHead {
     this.objectLeftEye.getWorldPosition(plEye);
     this.avatarHeight = plEye.y + 0.2;
 
+    if (avatar.enableStrongLight) {
+      const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+      pmremGenerator.compileEquirectangularShader();
+      this.scene.environment = pmremGenerator.fromScene(new RoomEnvironment()).texture;
+    }
+
     // Set pose, view and start animation
     if (!this.viewName) this.setView(this.opt.cameraView);
     this.setMood(this.avatar.avatarMood || this.moodName || this.opt.avatarMood);
     this.start();
     this.enableClickDetection();
   }
+
+  async setVehicle(url = "/model/bic_car.glb", rotation = { x: 0, y: -0.6, z: 0 }, position = { x: -1, y: 0.5, z: -2 }) {
+    const loader = new GLTFLoader();
+    let { scene: Vehicle } = await loader.loadAsync(url);
+    Vehicle.rotation.set(rotation.x, rotation.y, rotation.z);
+    Vehicle.position.set(position.x, position.y, position.z);
+    this.scene.add(Vehicle);
+  }
+
+  setLogo(blob) {
+    if (this.logo) this.logo = null;
+    let isblob = false;
+    let url = blob;
+    // 判断blob 是blob类型还是string类型
+    if (typeof blob !== "string") {
+      isblob = true;
+      url = URL.createObjectURL(blob);
+    }
+
+    // 创建 logo 平面
+    const textureLoader = new THREE.TextureLoader();
+    const logoTexture = textureLoader.load(
+      url,
+      () => {
+        if (isblob) {
+          URL.revokeObjectURL(url);
+        }
+      },
+      undefined,
+      err => {
+        console.error("加载 logo 失败: " + err);
+      },
+    );
+    logoTexture.colorSpace = THREE.SRGBColorSpace;
+    this.logo = new THREE.Mesh(
+      new THREE.CircleGeometry(0.03, 64), // 尺寸可调
+      new THREE.MeshBasicMaterial({
+        map: logoTexture,
+        transparent: true,
+        side: THREE.DoubleSide,
+      }),
+    );
+
+    // 获取胸部骨骼
+    const chestBone = this.model.getObjectByName("Spine2");
+    if (!chestBone) {
+      console.error("未找到 Spine2 骨骼");
+      return;
+    }
+
+    // 添加到骨骼下
+    chestBone.add(this.logo);
+
+    // 调整 logo 的相对位置（试着微调到左胸）
+    this.logo.position.set(0.11, 0.1, 0.1); // X向左/右，Y向上/下，Z向前/后
+    this.logo.rotation.y = Math.PI * 0.12; // 稍微朝外倾斜一点
+    this.logo.rotation.x = -Math.PI * 0.12; // 稍微朝外倾斜一点
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    // === 鼠标事件监听 ===
+    window.addEventListener("click", event => {
+      // 将鼠标坐标归一化到 [-1, 1]
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      // 用摄像机和鼠标位置更新射线
+      raycaster.setFromCamera(mouse, this.camera);
+
+      // 检测点击的对象
+      if (!this.logo) return;
+      const intersects = raycaster.intersectObject(this.logo, true);
+
+      if (intersects.length > 0) {
+        console.log("🎯 点击到 logo！");
+      }
+    });
+  }
+
   enableClickDetection() {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -2590,27 +1935,15 @@ class TalkingHead {
       }
     });
   }
-  /**
-   * Get view names.
-   * @return {string[]} Supported view names.
-   */
+
   getViewNames() {
     return ["full", "mid", "upper", "head"];
   }
 
-  /**
-   * Get current view.
-   * @return {string} View name.
-   */
   getView() {
     return this.viewName;
   }
 
-  /**
-   * Fit 3D object to the view.
-   * @param {string} [view=null] Camera view. If null, reset current view
-   * @param {Object} [opt=null] Options
-   */
   setView(view, opt = null) {
     if (view !== "full" && view !== "upper" && view !== "head" && view !== "mid") return;
     if (!this.armature) {
@@ -2658,10 +1991,6 @@ class TalkingHead {
     this.cameraClock = 0;
   }
 
-  /**
-   * Change light colors and intensities.
-   * @param {Object} opt Options
-   */
   setLighting(opt) {
     opt = opt || {};
     // Ambient light
@@ -2700,9 +2029,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Render scene.
-   */
   render() {
     if (this.isRunning) {
       this.renderer.render(this.scene, this.camera);
@@ -2710,9 +2036,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Resize avatar.
-   */
   onResize() {
     this.camera.aspect = this.nodeAvatar.clientWidth / this.nodeAvatar.clientHeight;
     this.camera.updateProjectionMatrix();
@@ -2721,10 +2044,6 @@ class TalkingHead {
     this.render();
   }
 
-  /**
-   * Update avatar pose.
-   * @param {number} t High precision timestamp in ms.
-   */
   updatePoseBase(t) {
     for (const [key, val] of Object.entries(this.poseTarget.props)) {
       const o = this.poseAvatar.props[key];
@@ -2743,9 +2062,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Update avatar pose deltas
-   */
   updatePoseDelta() {
     for (const [key, d] of Object.entries(this.poseDelta.props)) {
       if (d.x === 0 && d.y === 0 && d.z === 0) continue;
@@ -2760,10 +2076,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Update morph target values.
-   * @param {number} dt Delta time in ms.
-   */
   updateMorphTargets(dt) {
     for (let [mt, o] of Object.entries(this.mtAvatar)) {
       if (!o.needsUpdate) continue;
@@ -2953,12 +2265,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Get given pose as a string.
-   * @param {Object} pose Pose
-   * @param {number} [prec=1000] Precision used in values
-   * @return {string} Pose as a string
-   */
   getPoseString(pose, prec = 1000) {
     let s = "{";
     Object.entries(pose).forEach((x, i) => {
@@ -2977,11 +2283,6 @@ class TalkingHead {
     return s;
   }
 
-  /**
-   * Return pose template property taking into account mirror pose and gesture.
-   * @param {string} key Property key
-   * @return {Quaternion|Vector3} Position or rotation
-   */
   getPoseTemplateProp(key) {
     const ids = key.split(".");
     let target = ids[0] + "." + (ids[1] === "rotation" ? "quaternion" : ids[1]);
@@ -3022,11 +2323,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Change body weight from current leg to another.
-   * @param {Object} p Pose properties
-   * @return {Object} Mirrored pose.
-   */
   mirrorPose(p) {
     const r = {};
     for (let [key, val] of Object.entries(p)) {
@@ -3050,12 +2346,6 @@ class TalkingHead {
     return r;
   }
 
-  /**
-   * Create a new pose.
-   * @param {Object} template Pose template
-   * @param {numeric} [ms=2000] Transition duration in ms
-   * @return {Object} A new pose object.
-   */
   poseFactory(template, ms = 2000) {
     // Pose object
     const o = {
@@ -3082,11 +2372,6 @@ class TalkingHead {
     return o;
   }
 
-  /**
-   * Set a new pose and start transition timer.
-   * @param {Object} template Pose template, if null update current pose
-   * @param {number} [ms=2000] Transition time in milliseconds
-   */
   setPoseFromTemplate(template, ms = 2000) {
     // Special cases
     const isIntermediate = template && this.poseTarget && this.poseTarget.template && ((this.poseTarget.template.standing && template.lying) || (this.poseTarget.template.lying && template.standing));
@@ -3135,47 +2420,24 @@ class TalkingHead {
     });
   }
 
-  /**
-   * Get morph target value.
-   * @param {string} mt Morph target
-   * @return {number} Value
-   */
   getValue(mt) {
     return this.mtAvatar[mt]?.value;
   }
 
-  /**
-   * Set morph target value.
-   * @param {string} mt Morph target
-   * @param {number} val Value
-   * @param {number} [ms=null] Transition time in milliseconds.
-   */
   setValue(mt, val, ms = null) {
     if (this.mtAvatar.hasOwnProperty(mt)) {
       Object.assign(this.mtAvatar[mt], { system: val, systemd: ms, needsUpdate: true });
     }
   }
 
-  /**
-   * Get mood names.
-   * @return {string[]} Mood names.
-   */
   getMoodNames() {
     return Object.keys(this.animMoods);
   }
 
-  /**
-   * Get current mood.
-   * @return {string[]} Mood name.
-   */
   getMood() {
     return this.opt.avatarMood;
   }
 
-  /**
-   * Set mood.
-   * @param {string} s Mood name.
-   */
   setMood(s) {
     s = (s || "").trim().toLowerCase();
     if (!this.animMoods.hasOwnProperty(s)) throw new Error("Unknown mood.");
@@ -3203,19 +2465,10 @@ class TalkingHead {
     });
   }
 
-  /**
-   * Get morph target names.
-   * @return {string[]} Morph target names.
-   */
   getMorphTargetNames() {
     return ["eyesRotateX", "eyesRotateY", ...Object.keys(this.mtAvatar)].sort();
   }
 
-  /**
-   * Get baseline value for the morph target.
-   * @param {string} mt Morph target name
-   * @return {number} Value, null if not in baseline
-   */
   getBaselineValue(mt) {
     if (mt === "eyesRotateY") {
       const ll = this.getBaselineValue("eyeLookOutLeft");
@@ -3238,11 +2491,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Set baseline for morph target.
-   * @param {string} mt Morph target name
-   * @param {number} val Value, null if to be removed from baseline
-   */
   setBaselineValue(mt, val) {
     if (mt === "eyesRotateY") {
       this.setBaselineValue("eyeLookOutLeft", val === null ? null : val > 0 ? val : 0);
@@ -3259,11 +2507,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Get fixed value for the morph target.
-   * @param {string} mt Morph target name
-   * @return {number} Value, null if not fixed
-   */
   getFixedValue(mt) {
     if (mt === "eyesRotateY") {
       const ll = this.getFixedValue("eyeLookOutLeft");
@@ -3286,11 +2529,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Fix morph target.
-   * @param {string} mt Morph target name
-   * @param {number} val Value, null if to be removed
-   */
   setFixedValue(mt, val, ms = null) {
     if (mt === "eyesRotateY") {
       this.setFixedValue("eyeLookOutLeft", val === null ? null : val > 0 ? val : 0, ms);
@@ -3307,15 +2545,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Create a new animation based on an animation template.
-   * @param {Object} t Animation template
-   * @param {number} [loop=false] Number of loops, false if not looped
-   * @param {number} [scaleTime=1] Scale template times
-   * @param {number} [scaleValue=1] Scale template values
-   * @param {boolean} [noClockOffset=false] Do not apply clock offset
-   * @return {Object} New animation object.
-   */
   animFactory(t, loop = false, scaleTime = 1, scaleValue = 1, noClockOffset = false) {
     const o = { template: t, ts: [0], vs: {} };
 
@@ -3428,16 +2657,6 @@ class TalkingHead {
     return o;
   }
 
-  /**
-   * Calculate the correct value based on a given time using the given function.
-   * @param {function} vstart Start value
-   * @param {number[]} vend End value
-   * @param {number[]} tstart Start time
-   * @param {number[]} tend End time
-   * @param {number[]} t Current time
-   * @param {function} [fun=null] Ease in/out function, null = linear
-   * @return {number} Value based on the given time.
-   */
   valueAnimationSeq(vstart, vend, tstart, tend, t, fun = null) {
     vstart = this.valueFn(vstart);
     vend = this.valueFn(vend);
@@ -3450,25 +2669,12 @@ class TalkingHead {
     return k * t + (vstart - k * tstart);
   }
 
-  /**
-   * Return gaussian distributed random value between start and end with skew.
-   * @param {number} start Start value
-   * @param {number} end End value
-   * @param {number} [skew=1] Skew
-   * @param {number} [samples=5] Number of samples, 1 = uniform distribution.
-   * @return {number} Gaussian random value.
-   */
   gaussianRandom(start, end, skew = 1, samples = 5) {
     let r = 0;
     for (let i = 0; i < samples; i++) r += Math.random();
     return start + Math.pow(r / samples, skew) * (end - start);
   }
 
-  /**
-   * Create a sigmoid function.
-   * @param {number} k Sharpness of ease.
-   * @return {function} Sigmoid function.
-   */
   sigmoidFactory(k) {
     function base(t) {
       return 1 / (1 + Math.exp(-k * t)) - 0.5;
@@ -3479,21 +2685,10 @@ class TalkingHead {
     };
   }
 
-  /**
-   * Convert value from one range to another.
-   * @param {number} value Value
-   * @param {number[]} r1 Source range
-   * @param {number[]} r2 Target range
-   * @return {number} Scaled value
-   */
   convertRange(value, r1, r2) {
     return ((value - r1[0]) * (r2[1] - r2[0])) / (r1[1] - r1[0]) + r2[0];
   }
 
-  /**
-   * Animate the avatar.
-   * @param {number} t High precision timestamp in ms.
-   */
   animate(t) {
     // Are we running?
     if (!this.isRunning) return;
@@ -3893,9 +3088,6 @@ class TalkingHead {
     this.render();
   }
 
-  /**
-   * Reset all the visemes
-   */
   resetLips() {
     this.visemeNames.forEach(x => {
       this.morphs.forEach(y => {
@@ -3907,11 +3099,6 @@ class TalkingHead {
     });
   }
 
-  /**
-   * Get lip-sync processor based on language. Import module dynamically.
-   * @param {string} lang Language
-   * @param {string} [path="./"] Module path
-   */
   lipsyncGetProcessor(lang, path = "./") {
     if (!this.lipsync.hasOwnProperty(lang)) {
       const className = "BlessYou" + lang.charAt(0).toUpperCase() + lang.slice(1);
@@ -3921,37 +3108,16 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Preprocess text for tts/lipsync, including:
-   * - convert symbols/numbers to words
-   * - filter out characters that should be left unspoken
-   * @param {string} s Text
-   * @param {string} lang Language
-   * @return {string} Pre-processsed text.
-   */
   lipsyncPreProcessText(s, lang) {
     const o = this.lipsync[lang] || Object.values(this.lipsync)[0];
     return o.preProcessText(s);
   }
 
-  /**
-   * Convert words to Oculus LipSync Visemes.
-   * @param {string} word Word
-   * @param {string} lang Language
-   * @return {Lipsync} Lipsync object.
-   */
   lipsyncWordsToVisemes(word, lang) {
     const o = this.lipsync[lang] || Object.values(this.lipsync)[0];
     return o.wordsToVisemes(word);
   }
 
-  /**
-   * Add text to the speech queue.
-   * @param {string} s Text.
-   * @param {Options} [opt=null] Text-specific options for lipsync/TTS language, voice, rate and pitch, mood and mute
-   * @param {subtitlesfn} [onsubtitles=null] Callback when a subtitle is written
-   * @param {number[][]} [excludes=null] Array of [start, end] index arrays to not speak
-   */
   speakText(s, opt = null, onsubtitles = null, excludes = null) {
     opt = opt || {};
 
@@ -4084,10 +3250,6 @@ class TalkingHead {
     this.startSpeaking();
   }
 
-  /**
-   * Add emoji to speech queue.
-   * @param {string} em Emoji.
-   */
   async speakEmoji(em) {
     let emoji = this.animEmojis[em];
     if (emoji && emoji.link) emoji = this.animEmojis[emoji.link];
@@ -4097,28 +3259,16 @@ class TalkingHead {
     this.startSpeaking();
   }
 
-  /**
-   * Add a break to the speech queue.
-   * @param {numeric} t Duration in milliseconds.
-   */
   async speakBreak(t) {
     this.speechQueue.push({ break: t });
     this.startSpeaking();
   }
 
-  /**
-   * Callback when speech queue processes this marker.
-   * @param {markerfn} onmarker Callback function.
-   */
   async speakMarker(onmarker) {
     this.speechQueue.push({ marker: onmarker });
     this.startSpeaking();
   }
 
-  /**
-   * Play background audio.
-   * @param {string} url URL for the audio, stop if null.
-   */
   async playBackgroundAudio(url) {
     // Fetch audio
     let response = await fetch(url);
@@ -4134,9 +3284,6 @@ class TalkingHead {
     this.audioBackgroundSource.start(0, 100);
   }
 
-  /**
-   * Stop background audio.
-   */
   stopBackgroundAudio() {
     try {
       this.audioBackgroundSource.stop();
@@ -4144,10 +3291,6 @@ class TalkingHead {
     this.audioBackgroundSource.disconnect();
   }
 
-  /**
-   * Setup the convolver node based on an impulse.
-   * @param {string} [url=null] URL for the impulse, dry impulse if null
-   */
   async setReverb(url = null) {
     if (url) {
       // load impulse response from file
@@ -4164,12 +3307,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Set audio gain.
-   * @param {number} speech Gain for speech, if null do not change
-   * @param {number} [background=null] Gain for background audio, if null do not change
-   * @param {number} [fadeSecs=0] Gradual exponential fade in/out time in seconds
-   */
   setMixerGain(speech, background = null, fadeSecs = 0) {
     if (speech !== null) {
       this.audioSpeechGainNode.gain.cancelScheduledValues(this.audioCtx.currentTime);
@@ -4191,12 +3328,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Add audio to the speech queue.
-   * @param {Audio} r Audio message.
-   * @param {Options} [opt=null] Text-specific options for lipsyncLang
-   * @param {subtitlesfn} [onsubtitles=null] Callback when a subtitle is written
-   */
   speakAudio(r, opt = null, onsubtitles = null) {
     opt = opt || {};
     const lipsyncLang = opt.lipsyncLang || this.avatar.lipsyncLang || this.opt.lipsyncLang;
@@ -4307,10 +3438,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Play audio playlist using Web Audio API.
-   * @param {boolean} [force=false] If true, forces to proceed
-   */
   async playAudio(force = false) {
     if (!this.armature || (this.isAudioPlaying && !force)) return;
     this.isAudioPlaying = true;
@@ -4375,11 +3502,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Take the next queue item from the speech queue, convert it to text, and
-   * load the audio file.
-   * @param {boolean} [force=false] If true, forces to proceed (e.g. after break)
-   */
   async startSpeaking(force = false) {
     if (!this.armature || (this.isSpeaking && !force)) return;
     this.stateName = "speaking";
@@ -4549,9 +3671,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Pause speaking.
-   */
   pauseSpeaking() {
     try {
       this.audioSpeechSource.stop();
@@ -4567,9 +3686,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Stop speaking and clear the speech queue.
-   */
   stopSpeaking() {
     try {
       this.audioSpeechSource.stop();
@@ -4586,13 +3702,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Start streaming mode.
-   * @param opt optional settings inlcude gain, sampleRate, lipsyncLang, and lipsyncType
-   * @onAudioStart optional callback when audio playback starts
-   * @onAudioEnd optional callback when audio streaming is automatically ended.
-   * @onSubtitles optional callback to play subtitles
-   */
   async streamStart(opt = {}, onAudioStart = null, onAudioEnd = null, onSubtitles = null) {
     this.stopSpeaking(); // Stop the speech queue mode
 
@@ -4670,19 +3779,12 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Notify if no more streaming data is coming.
-   * Actual stop occurs after audio playback.
-   */
   streamNotifyEnd() {
     if (!this.isStreaming || !this.streamWorkletNode) return;
 
     this.streamWorkletNode.port.postMessage({ type: "no-more-data" });
   }
 
-  /**
-   * Stop streaming mode
-   */
   streamStop() {
     if (this.streamWorkletNode) {
       try {
@@ -4703,11 +3805,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Processes all lipsync data items currently in the streamLipsyncQueue.
-   * This is called once the actual audio start time is known.
-   * @private
-   */
   _processStreamLipsyncQueue() {
     // console.log(`[TalkingHead] Processing ${this.streamLipsyncQueue.length} queued lipsync items.`);
     while (this.streamLipsyncQueue.length > 0) {
@@ -4717,12 +3814,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Processes the lipsync data for the current audio stream.
-   * * @param {Object} r The lipsync data object.
-   * * @param {number} audioStart The start time of the audio stream.
-   * * @private
-   */
   _processLipsyncData(r, audioStart) {
     // Process visemes
     if (r.visemes && this.streamLipsyncType == "visemes") {
@@ -4800,10 +3891,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * stream audio and lipsync. Audio must be in 16 bit PCM format.
-   * @param r Audio object with viseme data.
-   */
   streamAudio(r) {
     if (!this.isStreaming || !this.streamWorkletNode) return;
 
@@ -4826,10 +3913,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Make eye contact.
-   * @param {number} t Time in milliseconds
-   */
   makeEyeContact(t) {
     this.animQueue.push(
       this.animFactory({
@@ -4840,10 +3923,6 @@ class TalkingHead {
     );
   }
 
-  /**
-   * Look ahead.
-   * @param {number} t Time in milliseconds
-   */
   lookAhead(t) {
     if (t) {
       // Randomize head/eyes ratio
@@ -4876,10 +3955,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Turn head and eyes to look at the camera.
-   * @param {number} t Time in milliseconds
-   */
   lookAtCamera(t) {
     if (this.avatar.hasOwnProperty("avatarIgnoreCamera")) {
       if (this.avatar.avatarIgnoreCamera) {
@@ -4894,12 +3969,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Turn head and eyes to look at the point (x,y).
-   * @param {number} x X-coordinate relative to visual viewport
-   * @param {number} y Y-coordinate relative to visual viewport
-   * @param {number} t Time in milliseconds
-   */
   lookAt(x, y, t) {
     // Eyes position
     const rect = this.nodeAvatar.getBoundingClientRect();
@@ -4969,12 +4038,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Set the closest hand to touch at (x,y).
-   * @param {number} x X-coordinate relative to visual viewport
-   * @param {number} y Y-coordinate relative to visual viewport
-   * @return {Boolean} If true, (x,y) touch the avatar
-   */
   touchAt(x, y) {
     const rect = this.nodeAvatar.getBoundingClientRect();
     const pointer = new THREE.Vector2(((x - rect.left) / rect.width) * 2 - 1, -((y - rect.top) / rect.height) * 2 + 1);
@@ -5036,11 +4099,6 @@ class TalkingHead {
     return intersects.length > 0;
   }
 
-  /**
-   * Talk with hands.
-   * @param {number} [delay=0] Delay in milliseconds
-   * @param {number} [prob=1] Probability of hand movement
-   */
   speakWithHands(delay = 0, prob = 0.5) {
     // Only if we are standing and not bending and probabilities match up
     if (this.mixer || this.gesture || !this.poseTarget.template.standing || this.poseTarget.template.bend || Math.random() > prob) return;
@@ -5105,44 +4163,25 @@ class TalkingHead {
     this.animQueue.push(anim);
   }
 
-  /**
-   * Get slowdown.
-   * @return {numeric} Slowdown factor.
-   */
   getSlowdownRate(k) {
     return this.animSlowdownRate;
   }
 
-  /**
-   * Set slowdown.
-   * @param {numeric} k Slowdown factor.
-   */
   setSlowdownRate(k) {
     this.animSlowdownRate = k;
     this.audioSpeechSource.playbackRate.value = 1 / this.animSlowdownRate;
     this.audioBackgroundSource.playbackRate.value = 1 / this.animSlowdownRate;
   }
 
-  /**
-   * Get autorotate speed.
-   * @return {numeric} Autorotate speed.
-   */
   getAutoRotateSpeed(k) {
     return this.controls.autoRotateSpeed;
   }
 
-  /**
-   * Set autorotate.
-   * @param {numeric} speed Autorotate speed, e.g. value 2 = 30 secs per orbit at 60fps.
-   */
   setAutoRotateSpeed(speed) {
     this.controls.autoRotateSpeed = speed;
     this.controls.autoRotate = speed > 0;
   }
 
-  /**
-   * Start animation cycle.
-   */
   start() {
     if (this.armature && this.isRunning === false) {
       this.audioCtx.resume();
@@ -5152,20 +4191,11 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Stop animation cycle.
-   */
   stop() {
     this.isRunning = false;
     this.audioCtx.suspend();
   }
 
-  /**
-   * Start listening incoming audio.
-   * @param {AnalyserNode} analyzer Analyzer node for incoming audio
-   * @param {Object} [opt={}] Options
-   * @param {function} [onchange=null] Callback function for start
-   */
   startListening(analyzer, opt = {}, onchange = null) {
     this.listeningAnalyzer = analyzer;
     this.listeningAnalyzer.fftSize = 256;
@@ -5188,21 +4218,10 @@ class TalkingHead {
     this.isListening = true;
   }
 
-  /**
-   * Stop animation cycle.
-   */
   stopListening() {
     this.isListening = false;
   }
 
-  /**
-   * Play RPM/Mixamo animation clip.
-   * @param {string|Object} url URL to animation file FBX
-   * @param {progressfn} [onprogress=null] Callback for progress
-   * @param {number} [dur=10] Duration in seconds, but at least once
-   * @param {number} [ndx=0] Index of the clip
-   * @param {number} [scale=0.01] Position scale factor
-   */
   async playAnimation(url, onprogress = null, dur = 10, ndx = 0, scale = 0.01) {
     if (!this.armature) return;
 
@@ -5281,9 +4300,7 @@ class TalkingHead {
       }
     }
   }
-  /**
-   * Stop running animations.
-   */
+
   stopAnimation() {
     // Stop mixer
     this.mixer = null;
@@ -5309,14 +4326,6 @@ class TalkingHead {
     this.setPoseFromTemplate(null);
   }
 
-  /**
-   * Play RPM/Mixamo pose.
-   * @param {string|Object} url Pose name | URL to FBX
-   * @param {progressfn} [onprogress=null] Callback for progress
-   * @param {number} [dur=5] Duration of the pose in seconds
-   * @param {number} [ndx=0] Index of the clip
-   * @param {number} [scale=0.01] Position scale factor
-   */
   async playPose(url, onprogress = null, dur = 5, ndx = 0, scale = 0.01) {
     if (!this.armature) return;
 
@@ -5386,21 +4395,10 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Stop the pose. (Functionality is the same as in stopAnimation.)
-   */
   stopPose() {
     this.stopAnimation();
   }
 
-  /**
-   * Play a gesture, which is either a hand gesture, an emoji animation or their
-   * combination.
-   * @param {string} name Gesture name
-   * @param {number} [dur=3] Duration of the gesture in seconds
-   * @param {boolean} [mirror=false] Mirror gesture
-   * @param {number} [ms=1000] Transition time in milliseconds
-   */
   playGesture(name, dur = 3, mirror = false, ms = 1000) {
     if (!this.armature) return;
 
@@ -5490,10 +4488,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Stop the gesture.
-   * @param {number} [ms=1000] Transition time in milliseconds
-   */
   stopGesture(ms = 1000) {
     // Stop gesture timer
     if (this.gestureTimeout) {
@@ -5521,15 +4515,6 @@ class TalkingHead {
     }
   }
 
-  /**
-   * Cyclic Coordinate Descent (CCD) Inverse Kinematic (IK) algorithm.
-   * Adapted from:
-   * https://github.com/mrdoob/three.js/blob/master/examples/jsm/animation/CCDIKSolver.js
-   * @param {Object} ik IK configuration object
-   * @param {Vector3} [target=null] Target coordinate, if null return to template
-   * @param {Boolean} [relative=false] If true, target is relative to root
-   * @param {numeric} [d=null] If set, apply in d milliseconds
-   */
   ikSolve(ik, target = null, relative = false, d = null) {
     const targetVec = new THREE.Vector3();
     const effectorPos = new THREE.Vector3();

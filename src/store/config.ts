@@ -2,9 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface ConfigState {
-  currentLang: string;
+  currentLang: "zh-cn" | "en";
   dark: boolean;
-  setCurrentLang: (lang: string) => void;
+  setCurrentLang: (lang: "zh-cn" | "en") => void;
   setDark: (dark: boolean) => void;
 }
 
@@ -13,7 +13,7 @@ export const useConfigStore = create<ConfigState>()(
     set => ({
       dark: false,
       currentLang: "zh-cn",
-      setCurrentLang: (lang: string) => set({ currentLang: lang }),
+      setCurrentLang: (lang: "zh-cn" | "en") => set({ currentLang: lang }),
       setDark: (dark: boolean) => set({ dark }),
     }),
     {

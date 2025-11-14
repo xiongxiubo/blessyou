@@ -1,4 +1,4 @@
-import { App } from "antd";
+// import { App } from "antd";
 
 interface UseRefCanvasRecorderOptions {
   autoDownload?: boolean;
@@ -11,8 +11,8 @@ export function useRefCanvasRecorder({ autoDownload = true, backgroundImage = nu
   const chunksRef = useRef<BlobPart[]>([]);
   const [recording, setRecording] = useState(false);
   const [videoData, setVideoData] = useState<Blob | null>(null);
-  const { uploadVideo } = useApi();
-  const { message } = App.useApp();
+  // const { uploadVideo } = useApi();
+  // const { message } = App.useApp();
   // 下载锁
   const downloadLock = useRef(false);
 
@@ -155,31 +155,31 @@ export function useRefCanvasRecorder({ autoDownload = true, backgroundImage = nu
 
     try {
       if (videoData) {
-        // 把videoData 变成url
-        // const videoUrl = URL.createObjectURL(videoData);
-        // const a = document.createElement("a");
-        // a.href = videoUrl;
-        // a.download = `video_${Date.now()}.mp4`;
-        // a.click();
-        // URL.revokeObjectURL(videoUrl);
-        const formData = new FormData();
-        formData.append("file", videoData);
-        message.loading({
-          content: "正在下载视频请稍后",
-          key: "download",
-          duration: 0,
-        });
-        downloadLock.current = true;
+        //把videoData 变成url
+        const videoUrl = URL.createObjectURL(videoData);
+        const a = document.createElement("a");
+        a.href = videoUrl;
+        a.download = `video_${Date.now()}.mp4`;
+        a.click();
+        URL.revokeObjectURL(videoUrl);
+        // const formData = new FormData();
+        // formData.append("file", videoData);
+        // message.loading({
+        //   content: "正在下载视频请稍后",
+        //   key: "download",
+        //   duration: 0,
+        // });
+        // downloadLock.current = true;
 
-        const res = await uploadVideo(formData);
-        if (res) {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(new Blob([res], { type: "video/mp4" }));
-          a.download = `video_${Date.now()}.mp4`;
-          a.click();
-          URL.revokeObjectURL(a.href);
-          message.destroy("download");
-        }
+        // const res = await uploadVideo(formData);
+        // if (res) {
+        //   const a = document.createElement("a");
+        //   a.href = URL.createObjectURL(new Blob([res], { type: "video/mp4" }));
+        //   a.download = `video_${Date.now()}.mp4`;
+        //   a.click();
+        //   URL.revokeObjectURL(a.href);
+        //   message.destroy("download");
+        // }
       }
     } catch (error) {
       throw error;

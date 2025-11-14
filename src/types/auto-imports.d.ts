@@ -45,6 +45,7 @@ declare global {
   const memo: typeof import('react').memo
   const pcmBase64ToAudioUrl: typeof import('../utils/baseToaudio').pcmBase64ToAudioUrl
   const playPCM: typeof import('../utils/baseToaudio').playPCM
+  const poseTemplates: typeof import('../hooks/head/pose').poseTemplates
   const register: typeof import("../api/index").register
   const request: typeof import("../utils/request").default
   const startTransition: typeof import('react').startTransition
@@ -85,6 +86,8 @@ declare global {
   const useRefCanvasRecorder: typeof import('../hooks/useCanvasRecorder').useRefCanvasRecorder
   const useRequest: typeof import('../hooks/useRequest').default
   const useResolvedPath: typeof import('react-router-dom').useResolvedPath
+  const useRole: typeof import('../hooks/useRole').useRole
+  const useRoleStore: typeof import('../store/role').useRoleStore
   const useRoutes: typeof import('react-router-dom').useRoutes
   const useScenes: typeof import('../hooks/head/scenes').useScenes
   const useScreenRecoeding: typeof import("../hooks/useScreenRecoeding").default
@@ -92,12 +95,16 @@ declare global {
   const useSearchParams: typeof import('react-router-dom').useSearchParams
   const useState: typeof import('react').useState
   const useSyncExternalStore: typeof import('react').useSyncExternalStore
+  const useTemplate: typeof import('../hooks/useTemplate').useTemplate
   const useTransition: typeof import('react').useTransition
   const useUserStore: typeof import('../store/user').useUserStore
   const useWebmToMp4: typeof import("../hooks/useWebmToMp4").useWebmToMp4
 }
 // for type re-export
 declare global {
+  // @ts-ignore
+  export type { Role } from '../store/role'
+  import('../store/role')
   // @ts-ignore
   export type { LoginParams, RegisterParams } from '../api/index'
   import('../api/index')

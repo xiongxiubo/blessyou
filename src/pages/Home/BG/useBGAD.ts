@@ -4,17 +4,18 @@ export const useBGAD = () => {
   const { isMobile } = useDevice();
   const { getAdBg } = useApi();
   const [ad, setAd] = useState<any[]>([]);
+  const { role } = useRoleStore();
 
   const getAdBgData = useCallback(async () => {
-    const res = await getAdBg();
+    const res = await getAdBg({ chain: role.chain });
     if (res.code === 0) {
       setAd(res.data);
     }
-  }, [getAdBg]);
+  }, [getAdBg, role]);
   // 广告背景墙
   useEffect(() => {
     getAdBgData();
-  }, []);
+  }, [role]);
   // 当前显示哪一份
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
 

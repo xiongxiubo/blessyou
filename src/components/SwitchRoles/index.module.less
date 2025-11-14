@@ -1,0 +1,38 @@
+.switch-roles {
+  top: 70px;
+  bottom: 0;
+}
+
+.switch-roles-model-item-divider {
+  margin: 10px 0;
+  color: #fff;
+  border-block-start: #fff;
+}
+
+.switch-roles-model-item-content {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .switch-roles-model-item-content-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 5px;
+    .switch-roles-model-item-content-item-img {
+      width: 200px;
+      height: 200px;
+      @media (max-width: 768px) {
+        width: 150px;
+        height: 150px;
+      }
+    }
+    .switch-roles-model-item-text {
+      font-size: 16px;
+      font-weight: 500;
+    }
+  }
+}

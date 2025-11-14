@@ -1,29 +1,36 @@
 // @ts-ignore 忽略找不到模块声明文件的错误
 import { TalkingHead } from "./blessyouhead.mjs";
 import type { RefObject } from "react";
-// import bgpng from "@/assets/bg.png";
-// import bg2png from "@/assets/bg2.png";
-
 import { eq } from "lodash";
 import { App } from "antd";
 
 export default function useAudio(avatarRef: RefObject<HTMLDivElement | null>, setIsLoading: (loading: boolean) => void) {
   const [head, setHead] = useState<TalkingHead | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const { currentLang } = useLang();
   const { message } = App.useApp();
-  const { createTtsAudio } = useApi();
   const [AudioData, setAudioData] = useState<any>();
   const [Recording, setRecording] = useState(false);
-  // const { isMobile } = useDevice();
-  // const backgroundImage = useMemo(() => (isMobile ? bg2png : bgpng), [isMobile]);
-  // const { startRecording, downloadVideo } = useRefCanvasRecorder({ backgroundImage });
+  const wsRef = useRef<WebSocket | null>(null);
+  const { role } = useRole();
+
   const initTalkingHead = async () => {
+    setLoading(true);
+    clearContainer(avatarRef);
+    const post = poseTemplates(role.name);
+    const head = new TalkingHead(avatarRef.current, {
+      ttsEndpoint: "https://eu-texttospeech.googleapis.com/v1beta1/text:synthesize",
+      lipsyncModules: ["en"],
+      cameraView: "full",
+      poseTemplates: post,
+    });
     await head?.showAvatar(
       {
-        url: "/model/cz.glb",
+        url: role.modelurl,
         body: "M",
         avatarMood: "neutral",
         lipsyncLang: "en",
+        enableStrongLight: role.enableStrongLight,
       },
       (e: any) => {
         if (e.loaded === e.total) {
@@ -33,45 +40,71 @@ export default function useAudio(avatarRef: RefObject<HTMLDivElement | null>, se
         }
       },
     );
-    // head?.playAnimation("/model/a.fbx");
+    head?.setVehicle(role.vehicleurl, role.vehiclepos, role.vehiclerot);
+    setHead(head);
   };
-
+  // 链接websocket
+  const connectWebSocket = (data: string) => {
+    const token = localStorage.getItem("token") || "";
+    wsRef.current = new WebSocket(import.meta.env.VITE_WS_BASE + "?token=" + token);
+    wsRef.current.onopen = () => {
+      setIsLoading(true);
+      wsRef.current?.send(
+        JSON.stringify({
+          lang: currentLang,
+          type: role.name,
+          data,
+        }),
+      );
+    };
+    wsRef.current.onmessage = event => {
+      try {
+        const res = JSON.parse(event.data);
+        console.log(res);
+        if (eq(res.code, 0) || eq(res.code, 1)) {
+          if (eq(res.code, 0)) {
+            head?.playAnimation(getRandomDanceAnimation());
+          }
+          handleMessage(res.data);
+          setAudioData(res);
+          wsRef.current?.close();
+        } else {
+          message.error(res.msg);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("解析服务器消息错误:", error);
+      }
+    };
+    wsRef.current.onerror = error => {
+      console.error("WebSocket 错误:", error);
+    };
+    wsRef.current.onclose = () => {
+      console.log("WebSocket 连接关闭");
+    };
+  };
+  function clearContainer(ref: RefObject<HTMLDivElement | null>) {
+    if (!ref.current) return;
+    if (!head) return;
+    head?.renderer.dispose();
+    // 清理 three.js 渲染器
+    const canvas = ref.current.querySelector("canvas");
+    if (canvas && canvas.getContext) {
+      const gl = canvas.getContext("webgl") || canvas.getContext("webgl2");
+      if (gl) {
+        const loseCtx = gl.getExtension("WEBGL_lose_context");
+        loseCtx && loseCtx.loseContext();
+      }
+    }
+    // 移除所有子节点
+    while (ref.current.firstChild) {
+      ref.current.removeChild(ref.current.firstChild);
+    }
+  }
   useLayoutEffect(() => {
     if (head && !avatarRef.current) return;
-    const newHead = new TalkingHead(avatarRef.current, {
-      ttsEndpoint: "https://eu-texttospeech.googleapis.com/v1beta1/text:synthesize",
-      lipsyncModules: ["en"],
-      cameraView: "full",
-    });
-    setHead(newHead);
-  }, [avatarRef]);
-  useEffect(() => {
-    (async () => {
-      if (!head) return;
-      await initTalkingHead();
-    })();
-  }, [head]);
-
-  const sendText = async (text: string) => {
-    try {
-      const res = await createTtsAudio({ text });
-
-      if (eq(res.code, 0) || eq(res.code, 1)) {
-        // await startRecording(avatarRef, res.data.Audio);
-        if (eq(res.code, 0)) {
-          head?.playAnimation(getRandomDanceAnimation());
-        }
-        handleMessage(res.data);
-        setAudioData(res);
-      } else {
-        message.error(res.msg);
-        setIsLoading(false);
-      }
-    } catch (error) {
-      setIsLoading(false);
-      console.error(error);
-    }
-  };
+    initTalkingHead();
+  }, [avatarRef, role]);
   // 处理消息
   const handleMessage = (message: any) => {
     let words = message.Words || [];
@@ -92,8 +125,12 @@ export default function useAudio(avatarRef: RefObject<HTMLDivElement | null>, se
     async (audio: any) => {
       await head?.streamStart(
         { sampleRate: 16000, lipsyncType: "words", gain: 3, lipsyncLang: "en" },
-        () => setRecording(true),
         () => {
+          console.log("开始播放");
+          setRecording(true);
+        },
+        () => {
+          console.log("播放完成");
           setRecording(false);
           setIsLoading(false);
         },
@@ -112,9 +149,12 @@ export default function useAudio(avatarRef: RefObject<HTMLDivElement | null>, se
       handleMessage(AudioData.data);
     }
   };
-  return { loading, sendText, playAgain, AudioData };
+  // 设置logo
+  const setLogo = (logo: Blob) => {
+    head?.setLogo(logo);
+  };
+  return { loading, connectWebSocket, playAgain, AudioData, setLogo };
 }
-
 // 将Base64编码的音频数据转换为ArrayBuffer
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binaryString = atob(base64); // 解码 Base64 成 binary 字符串

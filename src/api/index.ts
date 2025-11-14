@@ -28,7 +28,7 @@ export function useApi() {
   // 创建tts音频
   const createTtsAudio: (data: { text: string }) => Promise<Response> = useCallback((data: { text: string }) => request.post("/tts/create", data), [request]);
   // 获取广告背景墙
-  const getAdBg: () => Promise<Response> = useCallback(() => request.get("/background/list"), [request]);
+  const getAdBg: (data: { chain: string }) => Promise<Response> = useCallback((data: { chain: string }) => request.get("/background/list", { params: data }), [request]);
   // 下载视频 /先将webm 上传到服务器，服务器返回mp4视频
 
   const uploadVideo: (data: FormData) => Promise<any> = useCallback(
